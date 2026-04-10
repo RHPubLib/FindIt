@@ -40,16 +40,21 @@ your-server.com/
     └── floor1-marked.jpg    (your floor plan images)
 ```
 
-## Step 5: Add to Vega Custom Header
+## Step 5: Add One Line to Vega Custom Header
 
-In Vega Discover admin, paste this into **Custom Header Code**:
+In Vega Discover admin, paste this as the **very first line** of your **Custom Header Code**:
 
 ```html
-<script src="https://your-server.com/findit-yourlibrary.js"></script>
-<link rel="stylesheet" href="https://your-server.com/findit.css">
+<script src="https://your-server.com/libraries/your-library/findit-yourlibrary.js"></script>
 ```
 
-> **Note:** The `<script>` tag must be the **very first line** of the header code. Vega strips script tags that appear after HTML content.
+That's it — one line. The bundled file includes inline styles, so no separate CSS link is needed.
+
+> **Note:** Vega strips `<script>` tags that appear after HTML content, so the script tag must come before any `<style>` or `<div>` elements in the header.
+
+### Multiple Vega Sites
+
+If your library runs more than one Vega Discover instance (e.g., a public catalog and a kiosk), add the **same script tag** to each site's Custom Header Code. One hosted file powers all your Vega sites — no duplication needed. All Vega Discover instances share the same DOM structure, so FindIt works identically across them.
 
 ## Step 6: Verify
 

@@ -92,16 +92,21 @@ your-server.com/
     └── floor1-marked.jpg
 ```
 
-### 5. Add to Vega Custom Header Code
+### 5. Add one line to Vega Custom Header Code
 
-**Important:** The script tag must be the **very first line** of your Custom Header Code. Vega strips `<script>` tags that appear after HTML content.
+Add a single `<script>` tag as the **very first line** of your Custom Header Code. That's it — one line enables FindIt on that catalog:
 
 ```html
-<script src="https://your-server.com/findit-yourlibrary.js"></script>
-<link rel="stylesheet" href="https://your-server.com/findit.css">
+<script src="https://your-server.com/libraries/your-library/findit-yourlibrary.js"></script>
 ```
 
-The CSS `<link>` can go anywhere in the header. Only the `<script>` tag placement matters.
+**Important:** Vega strips `<script>` tags that appear after HTML content, so the script tag must come before any `<style>` or `<div>` elements in the header.
+
+The bundled JS file includes inline styles, so no separate CSS file is required. If you prefer using the external stylesheet for the standalone (non-bundled) setup, add this anywhere in the header:
+
+```html
+<link rel="stylesheet" href="https://your-server.com/src/findit.css">
+```
 
 ---
 
@@ -188,6 +193,28 @@ FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
 |---|---|
 | **Your server** | Production files: bundled JS, CSS, map images, .htaccess |
 | **This repo** | Source code, templates, documentation, examples |
+
+---
+
+## Multiple Vega Sites, One Script
+
+A single FindIt script on your server can power multiple Vega Discover sites. If your library runs separate Vega instances — for example, a public catalog and a kiosk — you just add the same one-line `<script>` tag to each site's Custom Header Code:
+
+```html
+<script src="https://your-server.com/libraries/your-library/findit-yourlibrary.js"></script>
+```
+
+This works because:
+
+- **All Vega Discover sites share the same DOM structure** — the same `data-automation-id` attributes, the same `app-physical-item-availability` components
+- **FindIt matches on collection/location text**, not on the site URL — so if both sites display "On shelf at Large Print", both will show the button
+- **One hosted file, many catalogs** — update the script once on your server and every site picks up the change
+
+For example, Rochester Hills Public Library uses the same `findit-rhpl.js` across their IIC Collection catalog and their IIC Kiosk catalog. Both sites point to the same file on `findit.rhpl.org` — no duplication, no separate configs.
+
+### When you might need separate configs
+
+If different Vega sites use different collection names or need different map images, you can create separate bundled files (e.g., `findit-main.js` and `findit-kiosk.js`) with their own config sections. But in most cases, one file covers all your sites.
 
 ---
 
