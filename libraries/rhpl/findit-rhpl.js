@@ -67,45 +67,118 @@ window.FindItConfig = {
 
   function openModal(match, config) {
     closeModal();
+    var zoom = 1;
     var overlay = document.createElement("div");
-    overlay.id = MODAL_ID;
     overlay.id = MODAL_ID;
     overlay.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);";
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) closeModal();
     });
     var dialog = document.createElement("div");
-    dialog.style.cssText = "position:relative;max-width:800px;width:90vw;max-height:90vh;overflow-y:auto;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);";
+    dialog.style.cssText = "position:relative;max-width:850px;width:92vw;max-height:92vh;display:flex;flex-direction:column;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);";
     // Header bar
     var header = document.createElement("div");
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#00697f;color:#fff;padding:12px 20px;border-radius:8px 8px 0 0;";
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#00697f;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;flex-shrink:0;";
     var title = document.createElement("h2");
     title.style.cssText = "margin:0;font-size:1rem;font-weight:600;color:#fff;";
     title.textContent = match.label || "Shelf Location";
     header.appendChild(title);
+    var headerRight = document.createElement("div");
+    headerRight.style.cssText = "display:flex;align-items:center;gap:8px;";
     var closeBtn = document.createElement("button");
     closeBtn.style.cssText = "font-size:1.5rem;line-height:1;background:none;border:none;cursor:pointer;color:#fff;padding:0 4px;";
     closeBtn.innerHTML = "&times;";
     closeBtn.setAttribute("aria-label", "Close");
     closeBtn.addEventListener("click", closeModal);
-    header.appendChild(closeBtn);
+    headerRight.appendChild(closeBtn);
+    header.appendChild(headerRight);
     dialog.appendChild(header);
-    // Map area
+    // Zoom controls
+    var zoomBar = document.createElement("div");
+    zoomBar.style.cssText = "display:flex;align-items:center;gap:12px;padding:8px 20px;background:#f5f5f5;border-bottom:1px solid #e0e0e0;flex-shrink:0;";
+    var zoomBtnStyle = "background:none;border:1px solid #00697f;color:#00697f;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;";
+    var zoomInBtn = document.createElement("button");
+    zoomInBtn.style.cssText = zoomBtnStyle;
+    zoomInBtn.textContent = "+ Zoom In";
+    var zoomOutBtn = document.createElement("button");
+    zoomOutBtn.style.cssText = zoomBtnStyle;
+    zoomOutBtn.textContent = "- Zoom Out";
+    var zoomFitBtn = document.createElement("button");
+    zoomFitBtn.style.cssText = zoomBtnStyle;
+    zoomFitBtn.textContent = "Fit";
+    zoomBar.appendChild(zoomInBtn);
+    zoomBar.appendChild(zoomOutBtn);
+    zoomBar.appendChild(zoomFitBtn);
+    dialog.appendChild(zoomBar);
+    // Map viewport (scrollable)
+    var viewport = document.createElement("div");
+    viewport.style.cssText = "overflow:auto;flex:1;min-height:0;cursor:grab;";
+    // Map container (zoomable)
     var mapWrap = document.createElement("div");
-    mapWrap.style.cssText = "position:relative;width:100%;line-height:0;padding:20px;";
+    mapWrap.style.cssText = "position:relative;display:inline-block;transform-origin:0 0;transition:transform 0.2s ease;line-height:0;padding:16px;";
     var img = document.createElement("img");
-    img.style.cssText = "width:100%;height:auto;border:1px solid #e0e0e0;border-radius:4px;";
+    img.style.cssText = "max-width:100%;height:auto;border:1px solid #e0e0e0;border-radius:4px;pointer-events:none;";
     img.src = match.map || config.defaultMap;
     img.alt = match.label || "Floor map";
+    img.draggable = false;
     var marker = document.createElement("div");
     marker.style.cssText = "position:absolute;width:24px;height:24px;margin-left:-12px;margin-top:-24px;background:#e53935;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,0.35);pointer-events:none;";
     marker.style.left = (match.x || 50) + "%";
     marker.style.top = (match.y || 50) + "%";
     mapWrap.appendChild(img);
     mapWrap.appendChild(marker);
-    dialog.appendChild(mapWrap);
+    viewport.appendChild(mapWrap);
+    dialog.appendChild(viewport);
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
+    // Zoom functions
+    function applyZoom() {
+      mapWrap.style.transform = "scale(" + zoom + ")";
+      if (zoom > 1) {
+        img.style.maxWidth = "none";
+        img.style.width = img.naturalWidth + "px";
+        viewport.style.cursor = "grab";
+      } else {
+        img.style.maxWidth = "100%";
+        img.style.width = "";
+        viewport.style.cursor = "default";
+      }
+    }
+    zoomInBtn.addEventListener("click", function () {
+      zoom = Math.min(zoom + 0.5, 4);
+      applyZoom();
+    });
+    zoomOutBtn.addEventListener("click", function () {
+      zoom = Math.max(zoom - 0.5, 0.5);
+      applyZoom();
+    });
+    zoomFitBtn.addEventListener("click", function () {
+      zoom = 1;
+      applyZoom();
+      viewport.scrollLeft = 0;
+      viewport.scrollTop = 0;
+    });
+    // Drag to pan
+    var dragging = false, startX, startY, scrollL, scrollT;
+    viewport.addEventListener("mousedown", function (e) {
+      if (zoom <= 1) return;
+      dragging = true;
+      startX = e.pageX;
+      startY = e.pageY;
+      scrollL = viewport.scrollLeft;
+      scrollT = viewport.scrollTop;
+      viewport.style.cursor = "grabbing";
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", function (e) {
+      if (!dragging) return;
+      viewport.scrollLeft = scrollL - (e.pageX - startX);
+      viewport.scrollTop = scrollT - (e.pageY - startY);
+    });
+    document.addEventListener("mouseup", function () {
+      dragging = false;
+      if (zoom > 1) viewport.style.cursor = "grab";
+    });
     closeBtn.focus();
     document.addEventListener("keydown", escHandler);
   }
