@@ -1,2 +1,14 @@
-Header set Access-Control-Allow-Origin "*"
-Header set Access-Control-Allow-Methods "GET"
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET"
+</IfModule>
+
+<FilesMatch "\.(js|css|jpg|jpeg|png|gif|svg|woff|woff2|ttf|eot)$">
+    <IfModule mod_headers.c>
+        Header set Access-Control-Allow-Origin "*"
+    </IfModule>
+</FilesMatch>
+
+AddType text/css .css
+AddType application/javascript .js
+AddType image/jpeg .jpg
