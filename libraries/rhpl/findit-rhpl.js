@@ -189,8 +189,10 @@ window.FindItConfig = {
   }
 
   function injectButton(row, match, config) {
-    // Avoid duplicates anywhere on the page
-    if (document.querySelector("." + BTN_CLASS)) return;
+    // Find the closest parent card/item container
+    var card = row.closest('[data-automation-id="search_result_item"], [class*="card"], [class*="search-result"]') || row.closest('.row') || row.parentElement;
+    // Check if this specific card already has our button
+    if (card && card.querySelector("." + BTN_CLASS)) return;
     var btn = document.createElement("button");
     btn.className = BTN_CLASS;
     btn.style.cssText = "display:block;width:100%;margin-top:8px;padding:8px 16px;font-size:14px;font-weight:500;color:#fff;background:#00697f;border:2px solid #00697f;border-radius:4px;cursor:pointer;text-align:center;font-family:inherit;line-height:1.4;";
@@ -199,14 +201,13 @@ window.FindItConfig = {
       e.preventDefault();
       openModal(match, config);
     });
-    // Place after "Find Specific Edition" button in the action area
-    var fseBtn = document.querySelector('[data-automation-id="find-specific-edition-btn"]');
+    // Find action buttons within this specific card
+    var fseBtn = card ? card.querySelector('[data-automation-id="find-specific-edition-btn"]') : null;
     if (fseBtn) {
       fseBtn.insertAdjacentElement("afterend", btn);
       return;
     }
-    // Fallback: place after "Place Hold" button
-    var holdBtn = document.querySelector('[data-automation-id="place-hold-btn"]');
+    var holdBtn = card ? card.querySelector('[data-automation-id="place-hold-btn"]') : null;
     if (holdBtn) {
       var holdParent = holdBtn.closest('div') || holdBtn.parentElement;
       if (holdParent) {
