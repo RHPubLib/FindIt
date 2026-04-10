@@ -8,12 +8,12 @@
 window.FindItConfig = {
   libraryName: "Rochester Hills Public Library",
   buttonLabel: "View Shelf Location",
-  defaultMap: "https://findit.rhpl.org/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
+  defaultMap: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-FullRes.jpg",
   ranges: [
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection - 2nd Floor",
-      map: "https://findit.rhpl.org/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
+      map: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-FullRes.jpg",
       x: 5,
       y: 42
     }
@@ -69,35 +69,38 @@ window.FindItConfig = {
     closeModal();
     var overlay = document.createElement("div");
     overlay.id = MODAL_ID;
-    overlay.className = "findit-overlay";
+    overlay.id = MODAL_ID;
+    overlay.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);";
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) closeModal();
     });
     var dialog = document.createElement("div");
-    dialog.className = "findit-dialog";
+    dialog.style.cssText = "position:relative;max-width:800px;width:90vw;max-height:90vh;overflow-y:auto;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);";
+    // Header bar
     var header = document.createElement("div");
-    header.className = "findit-header";
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#00697f;color:#fff;padding:12px 20px;border-radius:8px 8px 0 0;";
     var title = document.createElement("h2");
-    title.className = "findit-title";
+    title.style.cssText = "margin:0;font-size:1rem;font-weight:600;color:#fff;";
     title.textContent = match.label || "Shelf Location";
     header.appendChild(title);
     var closeBtn = document.createElement("button");
-    closeBtn.className = "findit-close";
+    closeBtn.style.cssText = "font-size:1.5rem;line-height:1;background:none;border:none;cursor:pointer;color:#fff;padding:0 4px;";
     closeBtn.innerHTML = "&times;";
     closeBtn.setAttribute("aria-label", "Close");
     closeBtn.addEventListener("click", closeModal);
     header.appendChild(closeBtn);
     dialog.appendChild(header);
+    // Map area
     var mapWrap = document.createElement("div");
-    mapWrap.className = "findit-map-wrap";
+    mapWrap.style.cssText = "position:relative;width:100%;line-height:0;padding:20px;";
     var img = document.createElement("img");
-    img.className = "findit-map-img";
+    img.style.cssText = "width:100%;height:auto;border:1px solid #e0e0e0;border-radius:4px;";
     img.src = match.map || config.defaultMap;
     img.alt = match.label || "Floor map";
     var marker = document.createElement("div");
-    marker.className = "findit-marker";
+    marker.style.cssText = "position:absolute;width:24px;height:24px;margin-left:-12px;margin-top:-24px;background:#e53935;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,0.35);pointer-events:none;";
     marker.style.left = (match.x || 50) + "%";
-    marker.style.top  = (match.y || 50) + "%";
+    marker.style.top = (match.y || 50) + "%";
     mapWrap.appendChild(img);
     mapWrap.appendChild(marker);
     dialog.appendChild(mapWrap);
