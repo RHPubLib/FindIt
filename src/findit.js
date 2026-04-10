@@ -173,7 +173,7 @@
   /* ------------------------------------------------------------------ */
 
   function scanRows(config) {
-    // Vega renders availability rows with data-automation-id attributes
+    // Strategy 1: Vega legacy – data-automation-id attributes
     var rows = document.querySelectorAll(
       '[data-automation-id="availability_holding_container"]'
     );
@@ -202,6 +202,69 @@
         injectButton(row, match, config);
       }
     });
+
+    // Strategy 2: Vega Angular – rollup tabs with availability text
+    var rollupContainers = document.querySelectorAll(
+      'app-rollup-tabs-content-container, [class*="rollup-tab"]'
+    );
+
+    rollupContainers.forEach(function (container) {
+      // Find all text nodes that contain availability info
+      var textContent = (container.textContent || "").trim();
+      if (!textContent) return;
+
+      // Look for elements that display collection/call number info
+      var spans = container.querySelectorAll('span, div, p, a');
+      var callNumber = "";
+      var collection = "";
+      var location = "";
+
+      spans.forEach(function (el) {
+        var text = (el.textContent || "").trim();
+        // Detect collection names
+        if (text.toLowerCase().indexOf("collection") !== -1 && text.length < 100) {
+          collection = text;
+        }
+        // Detect call numbers (e.g., "EXPERIENCES BIRDING KIT #3")
+        if (text.match(/^[A-Z]/) && text.indexOf("|") === -1 && text.length > 3 && text.length < 80) {
+          if (!callNumber && text.toLowerCase().indexOf("collection") === -1 &&
+              text.toLowerCase().indexOf("shelf") === -1 &&
+              text.toLowerCase().indexOf("on shelf") === -1) {
+            callNumber = text;
+          }
+        }
+        // Detect branch/location
+        if (text.toLowerCase().indexOf("branch") !== -1 || text.toLowerCase().indexOf("library") !== -1) {
+          if (text.length < 80) location = text;
+        }
+      });
+
+      var match = findMatch(callNumber, collection, location, config.ranges || []);
+      if (match && !container.querySelector("." + BTN_CLASS)) {
+        // Find the best place to inject the button
+        var target = container.querySelector('[class*="action"], [class*="button-row"]') || container;
+        injectButton(target, match, config);
+      }
+    });
+
+    // Strategy 3: Search full page for collection text as a fallback
+    if (rows.length === 0 && rollupContainers.length === 0) {
+      var allText = document.body.textContent || "";
+      var ranges = config.ranges || [];
+      for (var i = 0; i < ranges.length; i++) {
+        var r = ranges[i];
+        if (r.collection && allText.toLowerCase().indexOf(r.collection.toLowerCase()) !== -1) {
+          // Collection text found on page - inject button near availability area
+          var availSection = document.querySelector(
+            '[class*="availability"], [class*="holding"], [class*="rollup"]'
+          );
+          if (availSection && !availSection.querySelector("." + BTN_CLASS)) {
+            injectButton(availSection, r, config);
+          }
+          break;
+        }
+      }
+    }
   }
 
   /* ------------------------------------------------------------------ */
