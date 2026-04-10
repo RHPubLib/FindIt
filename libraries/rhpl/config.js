@@ -14,7 +14,7 @@ window.FindItConfig = {
   ranges: [
     {
       collection: "Innovative Items",
-      label: "Innovative Items Collection – 2nd Floor",
+      label: "Innovative Items Collection - 2nd Floor",
       map: "https://findit.rhpl.org/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
       x: 5,
       y: 42
