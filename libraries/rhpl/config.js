@@ -9,13 +9,13 @@ window.FindItConfig = {
 
   buttonLabel: "Find It",
 
-  defaultMap: "https://rhpl.org/FindIt/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
+  defaultMap: "https://findit.rhpl.org/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
 
   ranges: [
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection – 2nd Floor",
-      map: "https://rhpl.org/FindIt/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
+      map: "https://findit.rhpl.org/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
       x: 5,
       y: 42
     }
