@@ -190,7 +190,7 @@ window.FindItConfig = {
 
   function injectButton(row, match, config) {
     // Find the closest parent card/item container
-    var card = row.closest('[data-automation-id="search_result_item"], [class*="card"], [class*="search-result"]') || row.closest('.row') || row.parentElement;
+    var card = row.closest('app-rollup-card, [data-automation-id="search-card"]') || row.closest('.row') || row.parentElement;
     // Check if this specific card already has our button
     if (card && card.querySelector("." + BTN_CLASS)) return;
     var btn = document.createElement("button");
