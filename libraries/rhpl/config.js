@@ -1,6 +1,12 @@
 /**
- * FindIt – Rochester Hills Public Library
- * IIC (Innovative Items Collection) – iic.rhpl.org
+ * FindIt – Example Configuration (Rochester Hills Public Library)
+ *
+ * This is a REFERENCE EXAMPLE showing how RHPL configured FindIt for
+ * their Innovative Items Collection catalog. Copy and adapt for your
+ * own library.
+ *
+ * IMPORTANT: Map URLs must point to YOUR OWN web server, not to this
+ * GitHub repository. Upload maps via SFTP to your hosting provider.
  */
 
 window.FindItConfig = {
@@ -9,13 +15,13 @@ window.FindItConfig = {
 
   buttonLabel: "View Shelf Location",
 
-  defaultMap: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg",
+  defaultMap: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
 
   ranges: [
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection - 2nd Floor",
-      map: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg",
+      map: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
       x: 5,
       y: 42
     }

@@ -1,19 +1,23 @@
 /**
- * FindIt – Rochester Hills Public Library (Bundled)
- * IIC (Innovative Items Collection) – iic.rhpl.org
- * This file combines config + findit.js into one script.
+ * FindIt – Example Bundled File (Rochester Hills Public Library)
+ *
+ * This is a REFERENCE EXAMPLE showing how to bundle config + engine
+ * into a single file for deployment. Copy and adapt for your library.
+ *
+ * IMPORTANT: Map URLs must point to YOUR OWN web server, not to this
+ * GitHub repository. Upload maps via SFTP to your hosting provider.
  */
 
 /* ---- Config ---- */
 window.FindItConfig = {
   libraryName: "Rochester Hills Public Library",
   buttonLabel: "View Shelf Location",
-  defaultMap: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg",
+  defaultMap: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
   ranges: [
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection - 2nd Floor",
-      map: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg",
+      map: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
       x: 5,
       y: 42
     }

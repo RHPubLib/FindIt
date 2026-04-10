@@ -2,7 +2,12 @@
 
 Open-source shelf-mapping for [Vega Discover](https://www.iii.com/products/vega/) library catalogs. Shows patrons exactly where an item is physically located using an interactive floor map — no paid subscription required.
 
-**Live demo:** Rochester Hills Public Library IIC Catalog → [iic.rhpl.org](https://iic.rhpl.org)
+---
+
+> **This repository is a project template, not a deployment source.**
+> Clone or fork it, customize the config for your library, and deploy
+> the files to **your own web server** via SFTP or your preferred method.
+> Never link your catalog directly to files hosted on GitHub.
 
 ---
 
@@ -33,37 +38,38 @@ No server-side component. No recurring cost. No external API calls. Pure vanilla
 
 ---
 
+## Security: Self-Host Your Files
+
+FindIt is designed so that each library hosts its own copy of the script and map images on infrastructure they control. This is intentional:
+
+- **Map images** contain your library's floor plans — host them on your own server, uploaded via SFTP
+- **Config files** contain URLs pointing to your server — keep them on your server, not on GitHub
+- **The bundled JS file** runs in your patrons' browsers — serve it from your own domain
+
+**Do not** load scripts or images directly from this GitHub repository into your catalog. If you do, anyone with push access to the repo could change what your patrons see. Always deploy to your own server first.
+
+---
+
 ## Quick Start
 
-### 1. Create your bundled file
+### 1. Clone this repository
+
+```bash
+git clone https://github.com/RHPubLib/FindIt.git
+```
+
+### 2. Create your library's config
 
 Copy the template and customize for your library:
 
 ```
 libraries/your-library/
-├── findit-yourlibrary.js   (config + engine bundled together)
-└── maps/
-    └── floor1-marked.jpg   (floor plan with highlighted areas)
+└── findit-yourlibrary.js   (config + engine bundled together)
 ```
 
 The bundled file includes both your library's configuration (collection names, map URLs) and the FindIt engine in a single file. See `libraries/rhpl/findit-rhpl.js` for a working example.
 
-### 2. Host the files
-
-Upload to any web server your Vega instance can reach. We use GoDaddy cPanel with a `findit.` subdomain and Git Version Control for easy deploys.
-
-### 3. Add to Vega Custom Header Code
-
-**Important:** The script tag must be the **very first line** of your Custom Header Code. Vega strips `<script>` tags that appear after HTML content.
-
-```html
-<script src="https://your-server.com/libraries/your-library/findit-yourlibrary.js"></script>
-<link rel="stylesheet" href="https://your-server.com/src/findit.css">
-```
-
-The CSS `<link>` can go anywhere in the header. Only the `<script>` tag placement matters.
-
-### 4. Prepare floor plan images
+### 3. Prepare floor plan images
 
 Create floor plan images with highlighted areas showing where items are shelved:
 
@@ -71,7 +77,31 @@ Create floor plan images with highlighted areas showing where items are shelved:
 - Save as JPEG for photographs/scans, PNG for digital drawings
 - Full resolution is fine — the modal includes zoom controls
 
-Each map image should have the relevant area already highlighted. This is simpler and more reliable than dynamic pin positioning.
+See [docs/floor-map-guide.md](docs/floor-map-guide.md) for detailed guidance.
+
+### 4. Upload to your web server
+
+Upload your bundled JS file, CSS, and map images to any web server your Vega instance can reach. For example, using SFTP to a GoDaddy cPanel host with a `findit.` subdomain:
+
+```
+your-server.com/
+├── findit-yourlibrary.js
+├── findit.css
+├── .htaccess              (copy from .htaccess.example)
+└── maps/
+    └── floor1-marked.jpg
+```
+
+### 5. Add to Vega Custom Header Code
+
+**Important:** The script tag must be the **very first line** of your Custom Header Code. Vega strips `<script>` tags that appear after HTML content.
+
+```html
+<script src="https://your-server.com/findit-yourlibrary.js"></script>
+<link rel="stylesheet" href="https://your-server.com/findit.css">
+```
+
+The CSS `<link>` can go anywhere in the header. Only the `<script>` tag placement matters.
 
 ---
 
@@ -119,25 +149,45 @@ Juvenile prefixes (`J`, `YA`, `E`, etc.) are automatically stripped before Dewey
 ## Architecture
 
 ```
-FindIt/
+FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
 ├── src/
-│   ├── findit.js            # Standalone engine (for separate config loading)
-│   └── findit.css           # Modal, button, and marker styles
+│   ├── findit.js              # Standalone engine (for separate config loading)
+│   └── findit.css             # Modal, button, and marker styles
 ├── libraries/
 │   ├── template/
-│   │   └── config.js        # Template for new libraries
+│   │   └── config.js          # Template for new libraries
 │   └── rhpl/
-│       ├── config.js        # RHPL config (standalone)
-│       └── findit-rhpl.js   # RHPL bundled file (config + engine)
-├── maps/                    # Floor plan images
-├── docs/                    # Setup and configuration guides
-└── .htaccess                # CORS headers for cross-origin loading
+│       ├── config.js          # RHPL example config (reference only)
+│       └── findit-rhpl.js     # RHPL example bundled file (reference only)
+├── maps/
+│   └── README.md              # Maps go on YOUR server, not here
+├── docs/                      # Setup and configuration guides
+├── .htaccess.example          # Copy to your server as .htaccess
+└── README.md
 ```
 
 ### Bundled vs. Separate Loading
 
 - **Bundled** (recommended): Single file contains config + engine. Works with Vega's script restrictions. Used for production deployment.
 - **Separate**: Config and engine in separate files. Requires Vega to load multiple script tags, which may not work depending on your Vega version.
+
+---
+
+## Deployment
+
+### Recommended: SFTP to your hosting provider
+
+1. Set up a subdomain (e.g., `findit.yourlibrary.org`) on your hosting
+2. Upload files via SFTP to the subdomain's document root
+3. Copy `.htaccess.example` to `.htaccess` on your server for CORS headers
+4. Point your Vega Custom Header Code at your server's URLs
+
+### What goes on your server vs. what stays in the repo
+
+| Location | Purpose |
+|---|---|
+| **Your server** | Production files: bundled JS, CSS, map images, .htaccess |
+| **This repo** | Source code, templates, documentation, examples |
 
 ---
 
@@ -151,7 +201,7 @@ FindIt/
 
 ### CORS
 
-If hosting on a different domain than your Vega instance, add CORS headers via `.htaccess`:
+If hosting on a different domain than your Vega instance, copy `.htaccess.example` to your server as `.htaccess`:
 
 ```apache
 <IfModule mod_headers.c>
@@ -164,8 +214,9 @@ If hosting on a different domain than your Vega instance, add CORS headers via `
 ## Requirements
 
 - Vega Discover with Custom Header Code capability
-- A web server to host the files (any static file host works)
+- A web server to host the files (any static file host works — GoDaddy, Bluehost, etc.)
 - Floor plan images with highlighted shelf locations
+- SFTP client for uploading files to your server
 
 No build step. No npm. No dependencies.
 
@@ -173,7 +224,7 @@ No build step. No npm. No dependencies.
 
 ## Contributing
 
-PRs welcome. If you add a config for your library, please contribute it back to `libraries/` so others can see real-world examples.
+PRs welcome. If you add a config for your library, please contribute it back to `libraries/` so others can see real-world examples. Use placeholder URLs (`your-server.example.com`) in contributed configs — do not include your production server URLs.
 
 To report a bug or request a feature: [open an issue](https://github.com/RHPubLib/FindIt/issues).
 

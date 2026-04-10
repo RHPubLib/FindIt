@@ -1,3 +1,11 @@
+# FindIt – Example .htaccess for Apache / cPanel hosting
+#
+# Copy this file to your web server as ".htaccess" (remove the .example
+# suffix). These CORS headers allow your Vega catalog to load FindIt
+# assets from a different domain.
+#
+# Do NOT use this file directly from the GitHub repository.
+
 <IfModule mod_headers.c>
     Header set Access-Control-Allow-Origin "*"
     Header set Access-Control-Allow-Methods "GET"
