@@ -7,7 +7,7 @@
 /* ---- Config ---- */
 window.FindItConfig = {
   libraryName: "Rochester Hills Public Library",
-  buttonLabel: "Find It",
+  buttonLabel: "View Shelf Location",
   defaultMap: "https://findit.rhpl.org/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
   ranges: [
     {
@@ -75,18 +75,19 @@ window.FindItConfig = {
     });
     var dialog = document.createElement("div");
     dialog.className = "findit-dialog";
+    var header = document.createElement("div");
+    header.className = "findit-header";
+    var title = document.createElement("h2");
+    title.className = "findit-title";
+    title.textContent = match.label || "Shelf Location";
+    header.appendChild(title);
     var closeBtn = document.createElement("button");
     closeBtn.className = "findit-close";
     closeBtn.innerHTML = "&times;";
     closeBtn.setAttribute("aria-label", "Close");
     closeBtn.addEventListener("click", closeModal);
-    dialog.appendChild(closeBtn);
-    if (match.label) {
-      var title = document.createElement("h2");
-      title.className = "findit-title";
-      title.textContent = match.label;
-      dialog.appendChild(title);
-    }
+    header.appendChild(closeBtn);
+    dialog.appendChild(header);
     var mapWrap = document.createElement("div");
     mapWrap.className = "findit-map-wrap";
     var img = document.createElement("img");
@@ -117,13 +118,26 @@ window.FindItConfig = {
   }
 
   function injectButton(row, match, config) {
-    if (row.querySelector("." + BTN_CLASS)) return;
+    // Avoid duplicates anywhere on the page
+    if (document.querySelector("." + BTN_CLASS)) return;
     var btn = document.createElement("button");
     btn.className = BTN_CLASS;
-    btn.textContent = config.buttonLabel || "Find It";
+    btn.textContent = config.buttonLabel || "View Shelf Location";
     btn.addEventListener("click", function () {
       openModal(match, config);
     });
+    // Try to place in the right-side action area near Place Hold / Find Specific Edition
+    var actionArea = document.querySelector(
+      '[data-automation-id="request_button"], [data-automation-id="find-specific-edition-btn"]'
+    );
+    if (actionArea) {
+      var parent = actionArea.closest('div');
+      if (parent) {
+        parent.parentElement.appendChild(btn);
+        return;
+      }
+    }
+    // Fallback: place after the availability container
     row.appendChild(btn);
   }
 
