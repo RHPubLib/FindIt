@@ -121,23 +121,28 @@ window.FindItConfig = {
     // Avoid duplicates anywhere on the page
     if (document.querySelector("." + BTN_CLASS)) return;
     var btn = document.createElement("button");
-    btn.className = BTN_CLASS;
+    btn.className = BTN_CLASS + " ins-buttons button-secondary flint w-100 mt-2";
     btn.textContent = config.buttonLabel || "View Shelf Location";
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
       openModal(match, config);
     });
-    // Try to place in the right-side action area near Place Hold / Find Specific Edition
-    var actionArea = document.querySelector(
-      '[data-automation-id="request_button"], [data-automation-id="find-specific-edition-btn"]'
-    );
-    if (actionArea) {
-      var parent = actionArea.closest('div');
-      if (parent) {
-        parent.parentElement.appendChild(btn);
+    // Place after "Find Specific Edition" button in the action area
+    var fseBtn = document.querySelector('[data-automation-id="find-specific-edition-btn"]');
+    if (fseBtn) {
+      fseBtn.insertAdjacentElement("afterend", btn);
+      return;
+    }
+    // Fallback: place after "Place Hold" button
+    var holdBtn = document.querySelector('[data-automation-id="place-hold-btn"]');
+    if (holdBtn) {
+      var holdParent = holdBtn.closest('div') || holdBtn.parentElement;
+      if (holdParent) {
+        holdParent.parentElement.appendChild(btn);
         return;
       }
     }
-    // Fallback: place after the availability container
+    // Last fallback: place in the availability container
     row.appendChild(btn);
   }
 
