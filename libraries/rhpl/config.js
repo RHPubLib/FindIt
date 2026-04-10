@@ -1,9 +1,6 @@
 /**
  * FindIt – Rochester Hills Public Library
- * https://discover.rhpl.org
- *
- * TODO: Fill in actual floor map URLs and x/y coordinates
- * TODO: Add all call number ranges for RHPL shelving layout
+ * IIC (Innovative Items Collection) – iic.rhpl.org
  */
 
 window.FindItConfig = {
@@ -12,19 +9,15 @@ window.FindItConfig = {
 
   buttonLabel: "Find It",
 
-  defaultMap: "",  // TODO: add default floor map URL
+  defaultMap: "https://rhpl.org/FindIt/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
 
   ranges: [
-    /* --- Add your ranges here --- */
-    /* Example:
     {
-      start: "000",
-      end: "099.99",
-      label: "Computer Science & General Works",
-      map: "",
-      x: 50,
-      y: 50
-    },
-    */
+      collection: "Innovative Items",
+      label: "Innovative Items Collection – 2nd Floor",
+      map: "https://rhpl.org/FindIt/maps/RHPL-Second-Floor-IIC-FullRes.jpg",
+      x: 5,
+      y: 42
+    }
   ]
 };
