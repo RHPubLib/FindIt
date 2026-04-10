@@ -121,12 +121,7 @@ window.FindItConfig = {
     img.src = match.map || config.defaultMap;
     img.alt = match.label || "Floor map";
     img.draggable = false;
-    var marker = document.createElement("div");
-    marker.style.cssText = "position:absolute;width:24px;height:24px;margin-left:-12px;margin-top:-24px;background:#e53935;border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,0.35);pointer-events:none;";
-    marker.style.left = (match.x || 50) + "%";
-    marker.style.top = (match.y || 50) + "%";
     mapWrap.appendChild(img);
-    mapWrap.appendChild(marker);
     viewport.appendChild(mapWrap);
     dialog.appendChild(viewport);
     overlay.appendChild(dialog);
