@@ -173,98 +173,64 @@
   /* ------------------------------------------------------------------ */
 
   function scanRows(config) {
-    // Strategy 1: Vega legacy – data-automation-id attributes
-    var rows = document.querySelectorAll(
-      '[data-automation-id="availability_holding_container"]'
-    );
+    // Vega uses app-physical-item-availability components with
+    // data-automation-id="item-availability-message" (contains "On shelf at <Collection>")
+    // data-automation-id="item-call-number-and-location" (contains call number and collection)
+    // Location links use data-automation-id="location-<Name>-<index>"
 
-    rows.forEach(function (row) {
-      if (row.querySelector("." + BTN_CLASS)) return;
+    var containers = document.querySelectorAll('app-physical-item-availability');
 
-      var callNumEl = row.querySelector(
-        '[data-automation-id="availability_call_number"]'
-      );
-      var collectionEl = row.querySelector(
-        '[data-automation-id="availability_collection"]'
-      );
-      var locationEl = row.querySelector(
-        '[data-automation-id="availability_branch_name"]'
-      );
+    containers.forEach(function (container) {
+      if (container.querySelector("." + BTN_CLASS)) return;
 
-      if (!callNumEl) return;
+      // Extract availability message: "On shelf at Innovative Items Collection"
+      var availMsg = container.querySelector('[data-automation-id="item-availability-message"]');
+      var callLocEl = container.querySelector('[data-automation-id="item-call-number-and-location"]');
 
-      var callNumber = (callNumEl.textContent || "").trim();
-      var collection = collectionEl ? (collectionEl.textContent || "").trim() : "";
-      var location   = locationEl   ? (locationEl.textContent   || "").trim() : "";
-
-      var match = findMatch(callNumber, collection, location, config.ranges || []);
-      if (match) {
-        injectButton(row, match, config);
-      }
-    });
-
-    // Strategy 2: Vega Angular – rollup tabs with availability text
-    var rollupContainers = document.querySelectorAll(
-      'app-rollup-tabs-content-container, [class*="rollup-tab"]'
-    );
-
-    rollupContainers.forEach(function (container) {
-      // Find all text nodes that contain availability info
-      var textContent = (container.textContent || "").trim();
-      if (!textContent) return;
-
-      // Look for elements that display collection/call number info
-      var spans = container.querySelectorAll('span, div, p, a');
-      var callNumber = "";
       var collection = "";
+      var callNumber = "";
       var location = "";
 
-      spans.forEach(function (el) {
-        var text = (el.textContent || "").trim();
-        // Detect collection names
-        if (text.toLowerCase().indexOf("collection") !== -1 && text.length < 100) {
-          collection = text;
+      if (availMsg) {
+        var msgText = (availMsg.textContent || "").trim();
+        // "On shelf at Innovative Items Collection" -> extract collection
+        var atMatch = msgText.match(/On shelf at\s+(.+)/i);
+        if (atMatch) collection = atMatch[1].trim();
+      }
+
+      if (callLocEl) {
+        var locText = (callLocEl.textContent || "").trim();
+        // Format: "EXPERIENCES BIRDING KIT #3 | Shelf location ... | Collection Innovative Items"
+        var parts = locText.split("|");
+        if (parts.length > 0) {
+          // First part before | is the call number
+          var strongEl = callLocEl.querySelector("strong");
+          callNumber = strongEl ? (strongEl.textContent || "").trim() : parts[0].trim();
         }
-        // Detect call numbers (e.g., "EXPERIENCES BIRDING KIT #3")
-        if (text.match(/^[A-Z]/) && text.indexOf("|") === -1 && text.length > 3 && text.length < 80) {
-          if (!callNumber && text.toLowerCase().indexOf("collection") === -1 &&
-              text.toLowerCase().indexOf("shelf") === -1 &&
-              text.toLowerCase().indexOf("on shelf") === -1) {
-            callNumber = text;
-          }
+        // Look for "Collection <name>" in the text
+        var collMatch = locText.match(/Collection\s+(.+?)(?:\||$)/i);
+        if (collMatch && !collection) {
+          collection = collMatch[1].trim();
         }
-        // Detect branch/location
-        if (text.toLowerCase().indexOf("branch") !== -1 || text.toLowerCase().indexOf("library") !== -1) {
-          if (text.length < 80) location = text;
-        }
+      }
+
+      // Also check location links
+      var locationLinks = container.parentElement ?
+        container.parentElement.querySelectorAll('[data-automation-id*="location-"]') : [];
+      locationLinks.forEach(function (link) {
+        var linkText = (link.textContent || "").trim();
+        if (linkText && !collection) collection = linkText;
+        // Extract location from the automation id: "location-Innovative Items Collection-0"
+        var locId = link.getAttribute("data-automation-id") || "";
+        var locMatch = locId.match(/^location-(.+)-\d+$/);
+        if (locMatch && !location) location = locMatch[1];
       });
 
       var match = findMatch(callNumber, collection, location, config.ranges || []);
-      if (match && !container.querySelector("." + BTN_CLASS)) {
-        // Find the best place to inject the button
-        var target = container.querySelector('[class*="action"], [class*="button-row"]') || container;
-        injectButton(target, match, config);
+      if (match) {
+        injectButton(container, match, config);
       }
     });
-
-    // Strategy 3: Search full page for collection text as a fallback
-    if (rows.length === 0 && rollupContainers.length === 0) {
-      var allText = document.body.textContent || "";
-      var ranges = config.ranges || [];
-      for (var i = 0; i < ranges.length; i++) {
-        var r = ranges[i];
-        if (r.collection && allText.toLowerCase().indexOf(r.collection.toLowerCase()) !== -1) {
-          // Collection text found on page - inject button near availability area
-          var availSection = document.querySelector(
-            '[class*="availability"], [class*="holding"], [class*="rollup"]'
-          );
-          if (availSection && !availSection.querySelector("." + BTN_CLASS)) {
-            injectButton(availSection, r, config);
-          }
-          break;
-        }
-      }
-    }
   }
 
   /* ------------------------------------------------------------------ */
