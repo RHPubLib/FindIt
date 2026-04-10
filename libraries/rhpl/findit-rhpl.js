@@ -121,7 +121,8 @@ window.FindItConfig = {
     // Avoid duplicates anywhere on the page
     if (document.querySelector("." + BTN_CLASS)) return;
     var btn = document.createElement("button");
-    btn.className = BTN_CLASS + " ins-buttons button-secondary flint w-100 mt-2";
+    btn.className = BTN_CLASS;
+    btn.style.cssText = "display:block;width:100%;margin-top:8px;padding:8px 16px;font-size:14px;font-weight:500;color:#fff;background:#00697f;border:2px solid #00697f;border-radius:4px;cursor:pointer;text-align:center;font-family:inherit;line-height:1.4;";
     btn.textContent = config.buttonLabel || "View Shelf Location";
     btn.addEventListener("click", function (e) {
       e.preventDefault();
