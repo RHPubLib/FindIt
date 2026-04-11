@@ -1,43 +1,40 @@
 /**
- * FindIt – Example Bundled File (Rochester Hills Public Library)
+ * FindIt – Rochester Hills Public Library
  *
- * This is a REFERENCE EXAMPLE showing how to bundle config + engine
- * into a single file for deployment. Copy and adapt for your library.
- *
- * IMPORTANT: Map URLs must point to YOUR OWN web server, not to this
- * GitHub repository. Upload maps via SFTP to your hosting provider.
+ * Config is loaded dynamically from ranges.json (published by the
+ * rectangle editor at editor.rhpl.org). The engine below includes
+ * branch tabs and multi-match support.
  */
 
-/* ---- Config ---- */
-window.FindItConfig = {
-  libraryName: "Rochester Hills Public Library",
-  buttonLabel: "View Shelf Location",
-  defaultMap: "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg",
-  branches: [
-    { id: "main-1f", label: "1st Floor",        location: "Main Library" },
-    { id: "main-2f", label: "2nd Floor",        location: "Main Library" },
-    { id: "van",     label: "Bookmobile (Van)", location: "Bookmobile" }
-  ],
-  ranges: [
-    {
-      collection: "Innovative Items",
-      label: "Innovative Items Collection - 2nd Floor",
-      branch: "main-2f",
-      map: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg",
-      x: 5,
-      y: 42
-    },
-    {
-      collection: "Large Print Biography",
-      label: "Large Print Biography - 1st Floor",
-      branch: "main-1f",
-      map: "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg",
-      x: 63.58,
-      y: 15.06,
-      area: { x: 60.34, y: 14.06, width: 6.48, height: 2, color: "#00697f" }
+/* ---- Dynamic Config Loader ---- */
+(function () {
+  var RANGES_URL = "https://findit.rhpl.org/libraries/rhpl/ranges.json";
+
+  window.FindItConfig = {
+    libraryName: "Rochester Hills Public Library",
+    buttonLabel: "View Shelf Location",
+    defaultMap: "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg",
+    ranges: []
+  };
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", RANGES_URL + "?t=" + Date.now(), true);
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      try {
+        var data = JSON.parse(xhr.responseText);
+        window.FindItConfig.ranges = data.ranges || data;
+        if (data.defaultMap) window.FindItConfig.defaultMap = data.defaultMap;
+        if (data.branches) window.FindItConfig.branches = data.branches;
+      } catch (e) {
+        console.error("[FindIt] Failed to parse ranges.json:", e);
+      }
+    } else {
+      console.warn("[FindIt] Could not load ranges.json (HTTP " + xhr.status + ")");
     }
-  ]
-};
+  };
+  xhr.send();
+})();
 
 /* ---- FindIt Engine ---- */
 (function () {
@@ -414,6 +411,26 @@ window.FindItConfig = {
       console.warn("[FindIt] No FindItConfig found.");
       return;
     }
+    // Wait for ranges.json to load before scanning
+    if (!config.ranges || config.ranges.length === 0) {
+      var waitElapsed = 0;
+      var waitTimer = setInterval(function () {
+        waitElapsed += 200;
+        if (config.ranges && config.ranges.length > 0) {
+          clearInterval(waitTimer);
+          beginScanning(config);
+        } else if (waitElapsed >= 5000) {
+          clearInterval(waitTimer);
+          console.warn("[FindIt] No ranges loaded after 5s — starting with empty config.");
+          beginScanning(config);
+        }
+      }, 200);
+      return;
+    }
+    beginScanning(config);
+  }
+
+  function beginScanning(config) {
     var elapsed = 0;
     var timer = setInterval(function () {
       scanRows(config);
