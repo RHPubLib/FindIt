@@ -20,6 +20,7 @@ When a patron views an item in your Vega Discover catalog, FindIt adds a **"View
 - Zoom in, zoom out, and fit-to-view controls
 - Click-and-drag panning when zoomed in
 - Close via the X button, clicking outside the modal, or pressing Escape
+- **Multi-branch support**: for items available at multiple branches or floors, tabs let patrons switch between locations — only showing branches where the item actually exists
 
 The button integrates seamlessly with Vega's existing UI — matching the style and placement of native action buttons.
 
@@ -150,8 +151,13 @@ Juvenile prefixes (`J`, `YA`, `E`, etc.) are automatically stripped before Dewey
 | `map` | URL of the floor plan image (falls back to `defaultMap`) |
 | `area` | Rectangle overlay object: `{ x, y, width, height, color }` (percentages) |
 | `x`, `y` | Pin marker position as % from top-left (used when no `area`, or as center fallback) |
+| `branch` | Branch `id` from the top-level `branches` array (for multi-branch libraries) |
 
 Ranges can use either a rectangle `area` (highlighted region on the floor plan) or a simple `x`/`y` pin marker. The [Rectangle Editor](#rectangle-editor) generates both formats automatically.
+
+### Multi-Branch Libraries
+
+For libraries with multiple branches or floors, add a `branches` array to the config. Each range entry gets a `branch` property tying it to a branch `id`. Items at multiple locations need one range entry per branch. The modal shows tabs only when the item exists at more than one configured branch. See [docs/configuration.md](docs/configuration.md#multi-branch-example) for a full example.
 
 ---
 

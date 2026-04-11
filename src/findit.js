@@ -79,53 +79,55 @@
     return null;
   }
 
+  /**
+   * Like findMatch but returns ALL matching ranges (for multi-branch).
+   */
+  function findAllMatches(callNumber, collection, location, ranges) {
+    var stripped = stripPrefix(callNumber);
+    var results = [];
+
+    for (var i = 0; i < ranges.length; i++) {
+      var r = ranges[i];
+      var matched = false;
+
+      if (r.start !== undefined && r.end !== undefined) {
+        if (inDeweyRange(stripped, r.start, r.end)) matched = true;
+      }
+      if (!matched && r.collection && collection &&
+          collection.toLowerCase().indexOf(r.collection.toLowerCase()) !== -1) {
+        matched = true;
+      }
+      if (!matched && r.location && location &&
+          location.toLowerCase().indexOf(r.location.toLowerCase()) !== -1) {
+        matched = true;
+      }
+      if (!matched && r.prefix &&
+          callNumber.toUpperCase().indexOf(r.prefix.toUpperCase()) === 0) {
+        matched = true;
+      }
+
+      if (matched) results.push(r);
+    }
+
+    return results;
+  }
+
   /* ------------------------------------------------------------------ */
   /*  Modal                                                             */
   /* ------------------------------------------------------------------ */
 
-  function openModal(match, config) {
-    closeModal(); // ensure no duplicate
-
-    var overlay = document.createElement("div");
-    overlay.id = MODAL_ID;
-    overlay.className = "findit-overlay";
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) closeModal();
-    });
-
-    var dialog = document.createElement("div");
-    dialog.className = "findit-dialog";
-
-    // Header bar with title and close button
-    var header = document.createElement("div");
-    header.className = "findit-header";
-
-    var title = document.createElement("h2");
-    title.className = "findit-title";
-    title.textContent = match.label || "Shelf Location";
-    header.appendChild(title);
-
-    var closeBtn = document.createElement("button");
-    closeBtn.className = "findit-close";
-    closeBtn.innerHTML = "&times;";
-    closeBtn.setAttribute("aria-label", "Close");
-    closeBtn.addEventListener("click", closeModal);
-    header.appendChild(closeBtn);
-
-    dialog.appendChild(header);
-
-    // Floor map container
-    var mapWrap = document.createElement("div");
-    mapWrap.className = "findit-map-wrap";
+  /**
+   * Render floor map image + overlay (rectangle or pin) into a container.
+   */
+  function renderMapContent(mapWrap, match, config) {
+    mapWrap.innerHTML = "";
 
     var img = document.createElement("img");
     img.className = "findit-map-img";
     img.src = match.map || config.defaultMap;
     img.alt = match.label || "Floor map";
-
     mapWrap.appendChild(img);
 
-    // Render area rectangle overlay or fall back to pin marker
     if (match.area) {
       var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("class", "findit-svg-overlay");
@@ -147,14 +149,99 @@
 
       mapWrap.appendChild(svg);
     } else {
-      // Legacy pin marker fallback
       var marker = document.createElement("div");
       marker.className = "findit-marker";
       marker.style.left = (match.x || 50) + "%";
       marker.style.top  = (match.y || 50) + "%";
       mapWrap.appendChild(marker);
     }
+  }
 
+  function openModal(matches, config, preferredBranch) {
+    closeModal(); // ensure no duplicate
+
+    // Normalize: accept a single match for backward compatibility
+    if (!Array.isArray(matches)) matches = [matches];
+
+    // Determine which match to show first
+    var activeIndex = 0;
+    if (preferredBranch && matches.length > 1) {
+      for (var i = 0; i < matches.length; i++) {
+        if (matches[i].branch === preferredBranch) { activeIndex = i; break; }
+      }
+    }
+
+    var overlay = document.createElement("div");
+    overlay.id = MODAL_ID;
+    overlay.className = "findit-overlay";
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) closeModal();
+    });
+
+    var dialog = document.createElement("div");
+    dialog.className = "findit-dialog";
+
+    // Header bar with title and close button
+    var header = document.createElement("div");
+    header.className = "findit-header";
+
+    var title = document.createElement("h2");
+    title.className = "findit-title";
+    title.textContent = matches[activeIndex].label || "Shelf Location";
+    header.appendChild(title);
+
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "findit-close";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", closeModal);
+    header.appendChild(closeBtn);
+
+    dialog.appendChild(header);
+
+    // Floor map container (created early so tabs can reference it)
+    var mapWrap = document.createElement("div");
+    mapWrap.className = "findit-map-wrap";
+
+    // Branch/floor tabs (only if multiple matches)
+    if (matches.length > 1) {
+      var tabBar = document.createElement("div");
+      tabBar.className = "findit-tabs";
+
+      matches.forEach(function (m, idx) {
+        var tab = document.createElement("button");
+        tab.className = "findit-tab" + (idx === activeIndex ? " findit-tab-active" : "");
+
+        // Use branch label from config.branches, fall back to match label
+        var tabLabel = m.label;
+        if (m.branch && config.branches) {
+          for (var b = 0; b < config.branches.length; b++) {
+            if (config.branches[b].id === m.branch) {
+              tabLabel = config.branches[b].label;
+              break;
+            }
+          }
+        }
+        tab.textContent = tabLabel;
+
+        tab.addEventListener("click", function () {
+          // Update active tab
+          var tabs = tabBar.querySelectorAll(".findit-tab");
+          for (var t = 0; t < tabs.length; t++) {
+            tabs[t].className = "findit-tab" + (tabs[t] === tab ? " findit-tab-active" : "");
+          }
+          // Update title and map
+          title.textContent = m.label || "Shelf Location";
+          renderMapContent(mapWrap, m, config);
+        });
+
+        tabBar.appendChild(tab);
+      });
+
+      dialog.appendChild(tabBar);
+    }
+
+    renderMapContent(mapWrap, matches[activeIndex], config);
     dialog.appendChild(mapWrap);
 
     overlay.appendChild(dialog);
@@ -181,14 +268,14 @@
   /*  Button injection                                                  */
   /* ------------------------------------------------------------------ */
 
-  function injectButton(row, match, config) {
+  function injectButton(row, matches, config, preferredBranch) {
     if (row.querySelector("." + BTN_CLASS)) return; // already injected
 
     var btn = document.createElement("button");
     btn.className = BTN_CLASS;
     btn.textContent = config.buttonLabel || "Find It";
     btn.addEventListener("click", function () {
-      openModal(match, config);
+      openModal(matches, config, preferredBranch);
     });
 
     row.appendChild(btn);
@@ -240,21 +327,63 @@
         }
       }
 
-      // Also check location links
+      // Also check location links and build branch availability list
       var locationLinks = container.parentElement ?
         container.parentElement.querySelectorAll('[data-automation-id*="location-"]') : [];
+      var availableBranches = [];
       locationLinks.forEach(function (link) {
         var linkText = (link.textContent || "").trim();
         if (linkText && !collection) collection = linkText;
-        // Extract location from the automation id: "location-Innovative Items Collection-0"
+        // Extract location from the automation id: "location-Main Library-0"
         var locId = link.getAttribute("data-automation-id") || "";
         var locMatch = locId.match(/^location-(.+)-\d+$/);
-        if (locMatch && !location) location = locMatch[1];
+        if (locMatch) {
+          if (!location) location = locMatch[1];
+          availableBranches.push(locMatch[1]);
+        }
       });
 
-      var match = findMatch(callNumber, collection, location, config.ranges || []);
-      if (match) {
-        injectButton(container, match, config);
+      // Multi-branch path: collect all matches and filter by available branches
+      if (config.branches && config.branches.length > 0) {
+        var allMatches = findAllMatches(callNumber, collection, location, config.ranges || []);
+
+        // Filter to only branches where the item actually exists
+        var filtered = allMatches.filter(function (m) {
+          if (!m.branch) return true; // ranges without branch always pass
+          // Find this range's branch location string
+          for (var b = 0; b < config.branches.length; b++) {
+            if (config.branches[b].id === m.branch) {
+              // Check if this branch location appears in the item's available branches
+              var branchLoc = config.branches[b].location.toLowerCase();
+              for (var a = 0; a < availableBranches.length; a++) {
+                if (availableBranches[a].toLowerCase().indexOf(branchLoc) !== -1) return true;
+              }
+              return false;
+            }
+          }
+          return true; // branch id not in config, pass through
+        });
+
+        if (filtered.length > 0) {
+          // Detect preferred branch from first location pill
+          var preferredBranch = null;
+          if (availableBranches.length > 0) {
+            var firstLoc = availableBranches[0].toLowerCase();
+            for (var b = 0; b < config.branches.length; b++) {
+              if (firstLoc.indexOf(config.branches[b].location.toLowerCase()) !== -1) {
+                preferredBranch = config.branches[b].id;
+                break;
+              }
+            }
+          }
+          injectButton(container, filtered, config, preferredBranch);
+        }
+      } else {
+        // Single-branch path: use first match only (backward compatible)
+        var match = findMatch(callNumber, collection, location, config.ranges || []);
+        if (match) {
+          injectButton(container, match, config, null);
+        }
       }
     });
   }
