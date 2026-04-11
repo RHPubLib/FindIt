@@ -136,7 +136,7 @@ Each range entry uses one matcher:
 
 | Matcher | Example | Description |
 |---|---|---|
-| `collection` | `"Large Print"` | Matches if availability or collection text contains this value (case-insensitive) |
+| `collection` | `"Large Print"` | Matches if collection text contains this value (case-insensitive) |
 | `location` | `"Children"` | Matches if branch/location text contains this value |
 | `prefix` | `"DVD"` | Matches if call number starts with this value |
 | `start` + `end` | `"500"` / `"599.99"` | Dewey decimal range (inclusive) |
@@ -153,11 +153,96 @@ Juvenile prefixes (`J`, `YA`, `E`, etc.) are automatically stripped before Dewey
 | `x`, `y` | Pin marker position as % from top-left (used when no `area`, or as center fallback) |
 | `branch` | Branch `id` from the top-level `branches` array (for multi-branch libraries) |
 
-Ranges can use either a rectangle `area` (highlighted region on the floor plan) or a simple `x`/`y` pin marker. The [Rectangle Editor](#rectangle-editor) generates both formats automatically.
+Ranges can use either a rectangle `area` (highlighted region on the floor plan) or a simple `x`/`y` pin marker. The [Rectangle Editor](#rectangle-editor-phase-34) generates both formats automatically.
 
 ### Multi-Branch Libraries
 
 For libraries with multiple branches or floors, add a `branches` array to the config. Each range entry gets a `branch` property tying it to a branch `id`. Items at multiple locations need one range entry per branch. The modal shows tabs only when the item exists at more than one configured branch. See [docs/configuration.md](docs/configuration.md#multi-branch-example) for a full example.
+
+---
+
+## Rectangle Editor (Phase 3–4)
+
+A visual editor for drawing highlight rectangles on floor plan images, replacing the need to manually mark up images in an image editor. IT staff draw, label, and position rectangles that define where collections and shelf sections are located. The output is JSON that plugs directly into FindIt's `ranges` config.
+
+### What It Does
+
+- Upload floor plan images (JPEG, PNG, WebP)
+- Draw rectangles by clicking and dragging on the floor plan
+- Label each rectangle with: collection name, call number range (start/end), and display label
+- Pick collections and shelf locations directly from Polaris ILS via PAPI integration
+- Color-code rectangles (teal `#00697f` default, 8 presets, or custom)
+- Move, resize, and delete rectangles
+- Save/load projects for each floor
+- **Publish directly to findit.rhpl.org** — pushes `ranges.json` to GoDaddy via SCP, updating the live FindIt configuration immediately
+- Export JSON manually if needed
+
+### Dynamic Config Loading
+
+As of Phase 3–4, `findit-rhpl.js` no longer contains hardcoded ranges. Instead:
+
+1. The engine fetches `ranges.json` at runtime from the same directory
+2. `ranges.json` is published from the rectangle editor at `editor.rhpl.org`
+3. Each range entry includes both `x/y` center markers (backward compatible) and `area` rectangle overlays
+
+This separates data from code — updating shelf mappings never risks breaking the engine.
+
+### Hosting
+
+The editor runs on the RHPL Debian dev server as a Flask app behind Nginx:
+
+- **URL:** `https://editor.rhpl.org`
+- **Auth:** Google Workspace OAuth (restricted to `@rhpl.org` accounts)
+- **Stack:** Python 3 / Flask / Authlib / Gunicorn
+- **Service:** `systemctl status findit-editor`
+- **App code:** `/opt/findit-editor/app.py`
+- **Frontend code:** `editor/public/` (in this repo)
+- **Config:** `/etc/findit-editor/config.env`
+- **Nginx:** `/etc/nginx/sites-available/editor`
+
+### Publish Flow
+
+When a user clicks "Publish to FindIt" in the editor:
+
+1. All saved projects are combined into a single `ranges.json`
+2. The file is pushed to GoDaddy via SCP (`libraries/rhpl/ranges.json`)
+3. The updated `findit-rhpl.js` engine is also pushed
+4. File permissions are set to 644 so Apache can serve them
+5. FindIt picks up the changes immediately (cache-busted with `?t=timestamp`)
+
+### Export Format
+
+Each rectangle exports as a FindIt range entry with an `area` property:
+
+```json
+{
+  "collection": "Large Print",
+  "label": "Large Print – 2nd Floor Reading Room",
+  "map": "https://findit.rhpl.org/maps/floor2.jpg",
+  "x": 45.5,
+  "y": 32.1,
+  "area": {
+    "x": 30.2,
+    "y": 24.6,
+    "width": 30.5,
+    "height": 15.0,
+    "color": "#00697f"
+  }
+}
+```
+
+### Editor File Structure
+
+```
+editor/
+├── server.py              # Original standalone server (dev/reference)
+├── public/
+│   ├── index.html         # Editor UI
+│   ├── editor.css         # Styles (teal #00697f branding)
+│   └── editor.js          # Canvas drawing engine
+├── data/                  # Saved project JSON (gitignored)
+└── uploads/               # Uploaded floor plan images (gitignored)
+```
 
 ---
 
@@ -173,8 +258,11 @@ FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
 │   │   └── config.js          # Template for new libraries
 │   └── rhpl/
 │       ├── config.js          # RHPL example config (reference only)
-│       └── findit-rhpl.js     # RHPL example bundled file (reference only)
-├── editor/                    # Visual rectangle editor (see Rectangle Editor section)
+│       ├── findit-rhpl.js     # RHPL bundled file (dynamic config loader + engine)
+│       └── ranges.json        # Published by editor.rhpl.org (on GoDaddy only)
+├── editor/
+│   ├── server.py              # Standalone dev server (reference)
+│   └── public/                # Editor frontend (index.html, editor.js, editor.css)
 ├── maps/
 │   └── README.md              # Maps go on YOUR server, not here
 ├── docs/                      # Setup and configuration guides
@@ -182,9 +270,10 @@ FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
 └── README.md
 ```
 
-### Bundled vs. Separate Loading
+### Bundled vs. Dynamic Loading
 
-- **Bundled** (recommended): Single file contains config + engine. Works with Vega's script restrictions. Used for production deployment.
+- **Dynamic** (current RHPL setup): `findit-rhpl.js` loads `ranges.json` at runtime. Data is managed through the rectangle editor and published via SCP.
+- **Bundled** (standalone): Single file contains hardcoded config + engine. Simpler for libraries without the editor infrastructure.
 - **Separate**: Config and engine in separate files. Requires Vega to load multiple script tags, which may not work depending on your Vega version.
 
 ---
@@ -246,68 +335,6 @@ If hosting on a different domain than your Vega instance, copy `.htaccess.exampl
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
 ```
-
----
-
-## Rectangle Editor
-
-A visual editor for drawing highlight rectangles on floor plan images, replacing the need to manually calculate coordinates or mark up images in an image editor. IT staff draw, label, and position rectangles that define where collections and shelf sections are located. The output is JSON that plugs directly into FindIt's `ranges` config.
-
-- Upload floor plan images (JPEG, PNG, WebP)
-- Draw rectangles by clicking and dragging on the floor plan
-- Label each rectangle with collection name, call number range, and display label
-- Color-code rectangles (teal `#00697f` default, presets, or custom)
-- Move, resize, and delete rectangles
-- Save/load projects per floor
-- Export JSON in FindIt-compatible format with both `x/y` center markers and `area` rectangle overlays
-
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| V | Select/Move tool |
-| R | Draw rectangle tool |
-| Del / Backspace | Delete selected rectangle |
-| +/- | Zoom in/out |
-| 0 | Fit to view |
-| Space (hold) | Pan |
-| Scroll wheel | Zoom at cursor |
-| Esc | Deselect / close modal |
-
-### Hosting
-
-The editor runs on a separate server as a Flask app behind Nginx:
-
-- **Stack:** Python 3 / Flask / Authlib / Gunicorn
-- **Auth:** Google Workspace OAuth (restricted to `@rhpl.org` accounts)
-- **Service:** `systemctl status findit-editor`
-- **App code:** `/opt/findit-editor/app.py`
-- **Frontend code:** `editor/public/` (in this repo)
-- **Config:** `/etc/findit-editor/config.env`
-- **Nginx:** `/etc/nginx/sites-available/editor`
-
-### Export Format
-
-Each rectangle exports as a FindIt range entry with an `area` property:
-
-```json
-{
-  "collection": "Large Print",
-  "label": "Large Print – 2nd Floor Reading Room",
-  "map": "https://findit.rhpl.org/maps/floor2.jpg",
-  "x": 45.5,
-  "y": 32.1,
-  "area": {
-    "x": 30.2,
-    "y": 24.6,
-    "width": 30.5,
-    "height": 15.0,
-    "color": "#00697f"
-  }
-}
-```
-
-The editor runs separately from FindIt itself — see `editor/` directory for source code.
 
 ---
 
