@@ -9,7 +9,22 @@ All configuration lives in a single `config.js` file per library, loaded before 
 | `libraryName` | string | No | Display name (shown in modal if no range label) |
 | `buttonLabel` | string | No | Button text (default: `"Find It"`) |
 | `defaultMap` | string | No | Fallback floor map URL if a range has no `map` |
+| `branches` | array | No | Branch/floor definitions for multi-branch support (see below) |
 | `ranges` | array | **Yes** | Array of range matcher objects (see below) |
+
+## Branches (Multi-Branch / Multi-Floor)
+
+For libraries with multiple branches or floors, add an optional `branches` array. When present, the modal shows tabs letting patrons switch between locations. **Single-branch libraries can omit this entirely** — everything works as before.
+
+| Property | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | **Yes** | Unique key referenced by ranges (e.g. `"main-1f"`) |
+| `label` | string | **Yes** | Tab text shown in the modal (e.g. `"1st Floor"`) |
+| `location` | string | **Yes** | Text to match against Vega's location pills (e.g. `"Main Library"`) |
+
+Each range that should appear in a branch tab needs a `branch` property set to the branch `id`. Items at multiple locations need one range entry per branch with the same matcher. Tabs only appear for branches where the item actually exists — determined by comparing the branch `location` against Vega's location pills for that item.
+
+The patron's primary branch is auto-detected from Vega (the first location pill shown for the item).
 
 ## Range Objects
 
@@ -33,6 +48,7 @@ Each range object needs **one matcher** and **display properties**.
 | `area` | object | No | Rectangle overlay to highlight on the map (see below) |
 | `x` | number | No | Pin marker horizontal position, % from left (also used as center fallback) |
 | `y` | number | No | Pin marker vertical position, % from top (also used as center fallback) |
+| `branch` | string | No | Branch `id` from `branches` array (for multi-branch support) |
 
 ### Area Rectangle Overlay
 
@@ -82,3 +98,48 @@ window.FindItConfig = {
 ```
 
 The DVD example above uses a pin marker only (no `area`). Both styles work — use `area` for rectangle highlighting, or just `x`/`y` for a simple pin. The rectangle editor exports both formats for backward compatibility.
+
+## Multi-Branch Example
+
+```js
+window.FindItConfig = {
+  libraryName: "City Library System",
+  buttonLabel: "View Shelf Location",
+  defaultMap: "https://example.com/maps/main-floor1.jpg",
+  branches: [
+    { id: "main-1f", label: "Main - 1st Floor", location: "Main Library" },
+    { id: "main-2f", label: "Main - 2nd Floor", location: "Main Library" },
+    { id: "south",   label: "South Branch",     location: "South Branch" }
+  ],
+  ranges: [
+    // Single-branch item: only on 2nd floor, no tabs shown
+    {
+      collection: "Special Collections",
+      label: "Special Collections - 2nd Floor",
+      branch: "main-2f",
+      map: "https://example.com/maps/main-floor2.jpg",
+      x: 30, y: 40,
+      area: { x: 25, y: 35, width: 10, height: 10, color: "#00697f" }
+    },
+    // Multi-branch item: Large Print at Main 1F AND South Branch
+    // Create one range per branch with the same matcher
+    {
+      collection: "Large Print",
+      label: "Large Print - Main 1st Floor",
+      branch: "main-1f",
+      map: "https://example.com/maps/main-floor1.jpg",
+      x: 60, y: 20,
+      area: { x: 55, y: 15, width: 10, height: 10 }
+    },
+    {
+      collection: "Large Print",
+      label: "Large Print - South Branch",
+      branch: "south",
+      map: "https://example.com/maps/south-branch.jpg",
+      x: 45, y: 50
+    }
+  ]
+};
+```
+
+When a patron views a Large Print item that exists at both Main Library and South Branch, clicking "View Shelf Location" shows tabs for "Main - 1st Floor" and "South Branch". If the item only exists at one branch, no tabs appear.

@@ -110,6 +110,36 @@
   pointer-events: none;
 }
 
+/* ---- Branch/floor tabs ---- */
+.findit-tabs {
+  display: flex;
+  padding: 0 20px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  overflow-x: auto;
+}
+.findit-tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.findit-tab:hover {
+  color: #00697f;
+  background: #e8f4f6;
+}
+.findit-tab-active {
+  color: #00697f;
+  border-bottom-color: #00697f;
+  font-weight: 600;
+}
+
 /* ---- Marker pin (legacy fallback) ---- */
 .findit-marker {
   position: absolute;
