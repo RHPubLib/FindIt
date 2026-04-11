@@ -12,15 +12,22 @@
 window.FindItConfig = {
   libraryName: "Rochester Hills Public Library",
   buttonLabel: "View Shelf Location",
-  defaultMap: "https://your-server.example.com/maps/second-floor.jpg",
+  defaultMap: "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg",
   ranges: [
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection - 2nd Floor",
-      map: "https://your-server.example.com/maps/second-floor.jpg",
-      x: 8,
-      y: 43,
-      area: { x: 2, y: 38, width: 12, height: 10, color: "#00697f" }
+      map: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg",
+      x: 5,
+      y: 42
+    },
+    {
+      collection: "Large Print Biography",
+      label: "Large Print Biography",
+      map: "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg",
+      x: 63.58,
+      y: 15.06,
+      area: { x: 60.34, y: 14.06, width: 6.48, height: 2, color: "#00697f" }
     }
   ]
 };
@@ -267,8 +274,9 @@ window.FindItConfig = {
           callNumber = strongEl ? (strongEl.textContent || "").trim() : parts[0].trim();
         }
         var collMatch = locText.match(/Collection\s+(.+?)(?:\||$)/i);
-        if (collMatch && !collection) {
-          collection = collMatch[1].trim();
+        if (collMatch) {
+          // Append explicit Collection text so matching checks both sources
+          collection = collection ? collection + " " + collMatch[1].trim() : collMatch[1].trim();
         }
       }
       var locationLinks = container.parentElement ?

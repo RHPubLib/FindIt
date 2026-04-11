@@ -235,8 +235,8 @@
         }
         // Look for "Collection <name>" in the text
         var collMatch = locText.match(/Collection\s+(.+?)(?:\||$)/i);
-        if (collMatch && !collection) {
-          collection = collMatch[1].trim();
+        if (collMatch) {
+          collection = collection ? collection + " " + collMatch[1].trim() : collMatch[1].trim();
         }
       }
 

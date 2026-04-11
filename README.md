@@ -135,7 +135,7 @@ Each range entry uses one matcher:
 
 | Matcher | Example | Description |
 |---|---|---|
-| `collection` | `"Large Print"` | Matches if collection text contains this value (case-insensitive) |
+| `collection` | `"Large Print"` | Matches if availability or collection text contains this value (case-insensitive) |
 | `location` | `"Children"` | Matches if branch/location text contains this value |
 | `prefix` | `"DVD"` | Matches if call number starts with this value |
 | `start` + `end` | `"500"` / `"599.99"` | Dewey decimal range (inclusive) |
@@ -168,6 +168,7 @@ FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
 │   └── rhpl/
 │       ├── config.js          # RHPL example config (reference only)
 │       └── findit-rhpl.js     # RHPL example bundled file (reference only)
+├── editor/                    # Visual rectangle editor (see Rectangle Editor section)
 ├── maps/
 │   └── README.md              # Maps go on YOUR server, not here
 ├── docs/                      # Setup and configuration guides
@@ -254,7 +255,53 @@ A visual editor for drawing highlight rectangles on floor plan images, replacing
 - Save/load projects per floor
 - Export JSON in FindIt-compatible format with both `x/y` center markers and `area` rectangle overlays
 
-The editor runs separately from FindIt itself — see `editor/` directory and [the editor setup docs](docs/editor-setup.md) for deployment details.
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| V | Select/Move tool |
+| R | Draw rectangle tool |
+| Del / Backspace | Delete selected rectangle |
+| +/- | Zoom in/out |
+| 0 | Fit to view |
+| Space (hold) | Pan |
+| Scroll wheel | Zoom at cursor |
+| Esc | Deselect / close modal |
+
+### Hosting
+
+The editor runs on a separate server as a Flask app behind Nginx:
+
+- **Stack:** Python 3 / Flask / Authlib / Gunicorn
+- **Auth:** Google Workspace OAuth (restricted to `@rhpl.org` accounts)
+- **Service:** `systemctl status findit-editor`
+- **App code:** `/opt/findit-editor/app.py`
+- **Frontend code:** `editor/public/` (in this repo)
+- **Config:** `/etc/findit-editor/config.env`
+- **Nginx:** `/etc/nginx/sites-available/editor`
+
+### Export Format
+
+Each rectangle exports as a FindIt range entry with an `area` property:
+
+```json
+{
+  "collection": "Large Print",
+  "label": "Large Print – 2nd Floor Reading Room",
+  "map": "https://findit.rhpl.org/maps/floor2.jpg",
+  "x": 45.5,
+  "y": 32.1,
+  "area": {
+    "x": 30.2,
+    "y": 24.6,
+    "width": 30.5,
+    "height": 15.0,
+    "color": "#00697f"
+  }
+}
+```
+
+The editor runs separately from FindIt itself — see `editor/` directory for source code.
 
 ---
 
