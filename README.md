@@ -326,6 +326,8 @@ If different Vega sites use different collection names or need different map ima
 - Inline `<script>` content (code between tags) is stripped by Vega
 - The engine uses `MutationObserver` and polling to handle Vega's SPA navigation
 
+For comprehensive documentation of Vega's undocumented API endpoints, DOM structure, and Angular components, see **[docs/vega-api.md](docs/vega-api.md)** — a community-maintained reference since III does not publish public Vega API documentation.
+
 ### CORS
 
 If hosting on a different domain than your Vega instance, copy `.htaccess.example` to your server as `.htaccess`:
