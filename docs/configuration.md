@@ -30,8 +30,22 @@ Each range object needs **one matcher** and **display properties**.
 |---|---|---|---|
 | `label` | string | No | Modal heading text |
 | `map` | string | No | URL of floor plan image (falls back to `defaultMap`) |
-| `x` | number | No | Marker horizontal position, % from left (default: 50) |
-| `y` | number | No | Marker vertical position, % from top (default: 50) |
+| `area` | object | No | Rectangle overlay to highlight on the map (see below) |
+| `x` | number | No | Pin marker horizontal position, % from left (also used as center fallback) |
+| `y` | number | No | Pin marker vertical position, % from top (also used as center fallback) |
+
+### Area Rectangle Overlay
+
+When `area` is present, FindIt renders a semi-transparent rectangle overlay on the floor plan. The `x`/`y` top-level properties are kept for backward compatibility (the editor exports both).
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `x` | number | — | Left edge, % from left of image |
+| `y` | number | — | Top edge, % from top of image |
+| `width` | number | — | Width as % of image width |
+| `height` | number | — | Height as % of image height |
+| `color` | string | `"#00697f"` | Fill and stroke color |
+| `opacity` | number | `0.3` | Fill opacity (0–1) |
 
 ## Juvenile Prefix Handling
 
@@ -49,12 +63,14 @@ window.FindItConfig = {
       start: "000", end: "099.99",
       label: "Computer Science – 1st Floor",
       map: "https://example.com/FindIt/maps/floor1.jpg",
-      x: 45, y: 30
+      x: 45, y: 31,
+      area: { x: 40, y: 25, width: 10, height: 12, color: "#00697f" }
     },
     {
       collection: "Large Print",
       label: "Large Print – 2nd Floor Reading Room",
-      x: 60, y: 55
+      x: 62.5, y: 55,
+      area: { x: 55, y: 50, width: 15, height: 10 }
     },
     {
       prefix: "DVD",
@@ -64,3 +80,5 @@ window.FindItConfig = {
   ]
 };
 ```
+
+The DVD example above uses a pin marker only (no `area`). Both styles work — use `area` for rectangle highlighting, or just `x`/`y` for a simple pin. The rectangle editor exports both formats for backward compatibility.

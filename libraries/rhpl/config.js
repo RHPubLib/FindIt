@@ -21,9 +21,10 @@ window.FindItConfig = {
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection - 2nd Floor",
-      map: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
-      x: 5,
-      y: 42
+      map: "https://your-server.example.com/maps/second-floor.jpg",
+      x: 8,
+      y: 43,
+      area: { x: 2, y: 38, width: 12, height: 10, color: "#00697f" }
     }
   ]
 };

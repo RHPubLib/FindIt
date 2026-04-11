@@ -96,21 +96,23 @@
     var dialog = document.createElement("div");
     dialog.className = "findit-dialog";
 
-    // Close button
+    // Header bar with title and close button
+    var header = document.createElement("div");
+    header.className = "findit-header";
+
+    var title = document.createElement("h2");
+    title.className = "findit-title";
+    title.textContent = match.label || "Shelf Location";
+    header.appendChild(title);
+
     var closeBtn = document.createElement("button");
     closeBtn.className = "findit-close";
     closeBtn.innerHTML = "&times;";
     closeBtn.setAttribute("aria-label", "Close");
     closeBtn.addEventListener("click", closeModal);
-    dialog.appendChild(closeBtn);
+    header.appendChild(closeBtn);
 
-    // Title
-    if (match.label) {
-      var title = document.createElement("h2");
-      title.className = "findit-title";
-      title.textContent = match.label;
-      dialog.appendChild(title);
-    }
+    dialog.appendChild(header);
 
     // Floor map container
     var mapWrap = document.createElement("div");
@@ -121,14 +123,38 @@
     img.src = match.map || config.defaultMap;
     img.alt = match.label || "Floor map";
 
-    // Marker
-    var marker = document.createElement("div");
-    marker.className = "findit-marker";
-    marker.style.left = (match.x || 50) + "%";
-    marker.style.top  = (match.y || 50) + "%";
-
     mapWrap.appendChild(img);
-    mapWrap.appendChild(marker);
+
+    // Render area rectangle overlay or fall back to pin marker
+    if (match.area) {
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "findit-svg-overlay");
+      svg.setAttribute("viewBox", "0 0 100 100");
+      svg.setAttribute("preserveAspectRatio", "none");
+
+      var a = match.area;
+      var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", a.x);
+      rect.setAttribute("y", a.y);
+      rect.setAttribute("width", a.width);
+      rect.setAttribute("height", a.height);
+      rect.setAttribute("fill", a.color || "#00697f");
+      rect.setAttribute("fill-opacity", a.opacity || "0.3");
+      rect.setAttribute("stroke", a.color || "#00697f");
+      rect.setAttribute("stroke-width", "0.3");
+      rect.setAttribute("stroke-opacity", "0.8");
+      svg.appendChild(rect);
+
+      mapWrap.appendChild(svg);
+    } else {
+      // Legacy pin marker fallback
+      var marker = document.createElement("div");
+      marker.className = "findit-marker";
+      marker.style.left = (match.x || 50) + "%";
+      marker.style.top  = (match.y || 50) + "%";
+      mapWrap.appendChild(marker);
+    }
+
     dialog.appendChild(mapWrap);
 
     overlay.appendChild(dialog);

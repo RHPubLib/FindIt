@@ -148,6 +148,10 @@ Juvenile prefixes (`J`, `YA`, `E`, etc.) are automatically stripped before Dewey
 |---|---|
 | `label` | Text shown in the modal header bar |
 | `map` | URL of the floor plan image (falls back to `defaultMap`) |
+| `area` | Rectangle overlay object: `{ x, y, width, height, color }` (percentages) |
+| `x`, `y` | Pin marker position as % from top-left (used when no `area`, or as center fallback) |
+
+Ranges can use either a rectangle `area` (highlighted region on the floor plan) or a simple `x`/`y` pin marker. The [Rectangle Editor](#rectangle-editor) generates both formats automatically.
 
 ---
 
@@ -235,6 +239,22 @@ If hosting on a different domain than your Vega instance, copy `.htaccess.exampl
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
 ```
+
+---
+
+## Rectangle Editor
+
+A visual editor for drawing highlight rectangles on floor plan images, replacing the need to manually calculate coordinates or mark up images in an image editor. IT staff draw, label, and position rectangles that define where collections and shelf sections are located. The output is JSON that plugs directly into FindIt's `ranges` config.
+
+- Upload floor plan images (JPEG, PNG, WebP)
+- Draw rectangles by clicking and dragging on the floor plan
+- Label each rectangle with collection name, call number range, and display label
+- Color-code rectangles (teal `#00697f` default, presets, or custom)
+- Move, resize, and delete rectangles
+- Save/load projects per floor
+- Export JSON in FindIt-compatible format with both `x/y` center markers and `area` rectangle overlays
+
+The editor runs separately from FindIt itself — see `editor/` directory and [the editor setup docs](docs/editor-setup.md) for deployment details.
 
 ---
 

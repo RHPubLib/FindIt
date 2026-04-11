@@ -100,7 +100,17 @@
   border-radius: 4px;
 }
 
-/* ---- Marker pin ---- */
+/* ---- SVG highlight overlay ---- */
+.findit-svg-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: calc(100% - 40px);
+  height: calc(100% - 40px);
+  pointer-events: none;
+}
+
+/* ---- Marker pin (legacy fallback) ---- */
 .findit-marker {
   position: absolute;
   width: 24px;

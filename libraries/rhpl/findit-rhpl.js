@@ -12,14 +12,15 @@
 window.FindItConfig = {
   libraryName: "Rochester Hills Public Library",
   buttonLabel: "View Shelf Location",
-  defaultMap: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
+  defaultMap: "https://your-server.example.com/maps/second-floor.jpg",
   ranges: [
     {
       collection: "Innovative Items",
       label: "Innovative Items Collection - 2nd Floor",
-      map: "https://your-server.example.com/maps/second-floor-iic-marked.jpg",
-      x: 5,
-      y: 42
+      map: "https://your-server.example.com/maps/second-floor.jpg",
+      x: 8,
+      y: 43,
+      area: { x: 2, y: 38, width: 12, height: 10, color: "#00697f" }
     }
   ]
 };
@@ -126,6 +127,27 @@ window.FindItConfig = {
     img.alt = match.label || "Floor map";
     img.draggable = false;
     mapWrap.appendChild(img);
+    // Render area rectangle overlay if defined
+    if (match.area) {
+      var svgNS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute("viewBox", "0 0 100 100");
+      svg.setAttribute("preserveAspectRatio", "none");
+      svg.style.cssText = "position:absolute;top:16px;left:16px;width:calc(100% - 32px);height:calc(100% - 32px);pointer-events:none;";
+      var a = match.area;
+      var rect = document.createElementNS(svgNS, "rect");
+      rect.setAttribute("x", a.x);
+      rect.setAttribute("y", a.y);
+      rect.setAttribute("width", a.width);
+      rect.setAttribute("height", a.height);
+      rect.setAttribute("fill", a.color || "#00697f");
+      rect.setAttribute("fill-opacity", a.opacity || "0.3");
+      rect.setAttribute("stroke", a.color || "#00697f");
+      rect.setAttribute("stroke-width", "0.3");
+      rect.setAttribute("stroke-opacity", "0.8");
+      svg.appendChild(rect);
+      mapWrap.appendChild(svg);
+    }
     viewport.appendChild(mapWrap);
     dialog.appendChild(viewport);
     overlay.appendChild(dialog);
