@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Library Map - Rochester Hills Public Library</title>
+  <link rel="stylesheet" href="css/map-app.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="map-header">
+    <div class="map-header-left">
+      <h1 class="map-header-title">RHPL Library Map</h1>
+    </div>
+    <div class="map-header-search">
+      <input type="text" id="search-input" class="map-search-input"
+             placeholder="Search for books, DVDs, kits..."
+             autocomplete="off" aria-label="Search the catalog">
+      <button id="search-btn" class="map-search-btn" aria-label="Search">Search</button>
+      <button id="search-clear" class="map-search-clear" aria-label="Clear search" hidden>&times;</button>
+    </div>
+    <div class="map-header-right">
+      <button id="reset-btn" class="map-reset-btn" aria-label="Reset map">Reset</button>
+    </div>
+  </header>
+
+  <!-- Floor tabs -->
+  <nav class="map-tabs" id="floor-tabs" role="tablist"></nav>
+
+  <!-- Main content area -->
+  <div class="map-content">
+    <!-- Results panel (hidden until search) -->
+    <aside class="map-results-panel" id="results-panel" hidden>
+      <div class="map-results-header">
+        <h2 class="map-results-title">Results</h2>
+        <button class="map-results-close" id="results-close" aria-label="Close results">&times;</button>
+      </div>
+      <div class="map-results-list" id="results-list"></div>
+    </aside>
+
+    <!-- Map viewer -->
+    <main class="map-viewer" id="map-viewer">
+      <div class="map-viewport" id="map-viewport">
+        <div class="map-container" id="map-container"></div>
+      </div>
+
+      <!-- Zoom controls -->
+      <div class="map-zoom-controls">
+        <button class="map-zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
+        <button class="map-zoom-btn" id="zoom-out" aria-label="Zoom out">&minus;</button>
+        <button class="map-zoom-btn map-zoom-fit" id="zoom-fit" aria-label="Fit to view">Fit</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/map-config.js"></script>
+  <script src="js/map-engine.js"></script>
+  <script src="js/map-viewer.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
