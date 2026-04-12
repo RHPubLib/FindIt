@@ -74,7 +74,7 @@
     resultsList.innerHTML = '<li class="result-loading">Searching...</li>';
 
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/api/search?q=" + encodeURIComponent(query) + "&limit=20", true);
+    xhr.open("GET", "/api/search?q=" + encodeURIComponent(query) + "&limit=100", true);
     xhr.onload = function () {
       if (xhr.status !== 200) {
         resultsList.innerHTML = '<li class="result-error">Search failed</li>';
@@ -160,11 +160,25 @@
           document.getElementById("results-panel").style.display = "none";
           document.getElementById("results-bar").style.display = "flex";
           MapViewer.highlight(item.match);
+          // Show info panel
+          showInfoPanel(item.title, item.match.collection || item.match.label, item.match.directions);
         });
       }
 
       resultsList.appendChild(li);
     });
+  }
+
+  function showInfoPanel(title, collection, directions) {
+    var panel = document.getElementById("info-panel");
+    document.getElementById("info-title").textContent = title || "";
+    document.getElementById("info-collection").textContent = collection || "";
+    document.getElementById("info-directions").textContent = directions || "";
+    panel.style.display = (title || collection || directions) ? "" : "none";
+  }
+
+  function hideInfoPanel() {
+    document.getElementById("info-panel").style.display = "none";
   }
 
   function clearSearch() {
@@ -176,6 +190,7 @@
     searchClear.hidden = true;
     resultsPanel.style.display = "none";
     document.getElementById("results-bar").style.display = "none";
+    hideInfoPanel();
     MapViewer.clearHighlight();
   }
 
