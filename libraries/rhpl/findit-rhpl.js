@@ -110,7 +110,7 @@
   function renderMapContent(mapWrap, match, config, zoom) {
     mapWrap.innerHTML = "";
     var img = document.createElement("img");
-    img.style.cssText = "max-width:100%;height:auto;border:1px solid #e0e0e0;border-radius:4px;pointer-events:none;";
+    img.style.cssText = "width:100%;height:auto;display:block;border:1px solid #e0e0e0;border-radius:4px;pointer-events:none;";
     img.src = match.map || config.defaultMap;
     img.alt = match.label || "Floor map";
     img.draggable = false;
@@ -120,7 +120,7 @@
       var svg = document.createElementNS(svgNS, "svg");
       svg.setAttribute("viewBox", "0 0 100 100");
       svg.setAttribute("preserveAspectRatio", "none");
-      svg.style.cssText = "position:absolute;top:16px;left:16px;width:calc(100% - 32px);height:calc(100% - 32px);pointer-events:none;";
+      svg.style.cssText = "position:absolute;top:8px;left:8px;width:calc(100% - 16px);height:calc(100% - 16px);pointer-events:none;";
       var a = match.area;
       var rect = document.createElementNS(svgNS, "rect");
       rect.setAttribute("x", a.x);
@@ -155,7 +155,7 @@
       if (e.target === overlay) closeModal();
     });
     var dialog = document.createElement("div");
-    dialog.style.cssText = "position:relative;max-width:850px;width:92vw;max-height:92vh;display:flex;flex-direction:column;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);";
+    dialog.style.cssText = "position:relative;width:96vw;height:92vh;max-width:900px;display:flex;flex-direction:column;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;";
     // Header bar
     var header = document.createElement("div");
     header.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#00697f;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;flex-shrink:0;";
@@ -175,7 +175,7 @@
     dialog.appendChild(header);
     // Map container (created early so tabs can reference it)
     var mapWrap = document.createElement("div");
-    mapWrap.style.cssText = "position:relative;display:inline-block;transform-origin:0 0;transition:transform 0.2s ease;line-height:0;padding:16px;";
+    mapWrap.style.cssText = "position:relative;display:inline-block;line-height:0;padding:8px;";
     var img; // will hold current img reference for zoom
     // Branch/floor tabs (only if multiple matches)
     if (matches.length > 1) {
@@ -226,43 +226,68 @@
     dialog.appendChild(zoomBar);
     // Map viewport (scrollable)
     var viewport = document.createElement("div");
-    viewport.style.cssText = "overflow:auto;flex:1;min-height:0;cursor:grab;";
+    viewport.style.cssText = "overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;";
     img = renderMapContent(mapWrap, matches[activeIndex], config);
     viewport.appendChild(mapWrap);
     dialog.appendChild(viewport);
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
-    // Zoom functions
-    function applyZoom() {
-      mapWrap.style.transform = "scale(" + zoom + ")";
+    // Zoom — direct image sizing (no CSS transform)
+    var baseWidth = 0;
+    function initBaseWidth() {
       var curImg = mapWrap.querySelector("img");
       if (curImg) {
-        if (zoom > 1) {
-          curImg.style.maxWidth = "none";
-          curImg.style.width = curImg.naturalWidth + "px";
-          viewport.style.cursor = "grab";
-        } else {
-          curImg.style.maxWidth = "100%";
-          curImg.style.width = "";
-          viewport.style.cursor = "default";
+        baseWidth = viewport.clientWidth - 16;
+        curImg.style.width = baseWidth + "px";
+        curImg.style.maxWidth = "none";
+        // Size SVG overlay to match
+        var svg = mapWrap.querySelector("svg");
+        if (svg) {
+          svg.style.width = baseWidth + "px";
+          svg.style.height = (baseWidth * curImg.naturalHeight / curImg.naturalWidth) + "px";
         }
       }
     }
-    zoomInBtn.addEventListener("click", function () {
-      zoom = Math.min(zoom + 0.5, 4);
-      applyZoom();
-    });
-    zoomOutBtn.addEventListener("click", function () {
-      zoom = Math.max(zoom - 0.5, 0.5);
-      applyZoom();
-    });
+    function zoomTo(newZoom) {
+      newZoom = Math.min(Math.max(newZoom, 1), 6);
+      if (!baseWidth) initBaseWidth();
+      var curImg = mapWrap.querySelector("img");
+      if (!curImg) return;
+      // Remember center point
+      var sw = viewport.scrollWidth || 1;
+      var sh = viewport.scrollHeight || 1;
+      var fracX = (viewport.scrollLeft + viewport.clientWidth / 2) / sw;
+      var fracY = (viewport.scrollTop + viewport.clientHeight / 2) / sh;
+      // Apply new size
+      zoom = newZoom;
+      var newWidth = baseWidth * zoom;
+      curImg.style.width = newWidth + "px";
+      // Size SVG overlay to match
+      var svg = mapWrap.querySelector("svg");
+      if (svg) {
+        svg.style.width = newWidth + "px";
+        svg.style.height = (newWidth * curImg.naturalHeight / curImg.naturalWidth) + "px";
+      }
+      // Restore center
+      var newSW = viewport.scrollWidth;
+      var newSH = viewport.scrollHeight;
+      viewport.scrollLeft = Math.max(0, fracX * newSW - viewport.clientWidth / 2);
+      viewport.scrollTop = Math.max(0, fracY * newSH - viewport.clientHeight / 2);
+    }
+    // Initialize base width once image loads
+    var initImg = mapWrap.querySelector("img");
+    if (initImg) {
+      if (initImg.complete && initImg.naturalWidth) initBaseWidth();
+      else initImg.addEventListener("load", initBaseWidth);
+    }
+    zoomInBtn.addEventListener("click", function () { zoomTo(zoom * 1.4); });
+    zoomOutBtn.addEventListener("click", function () { zoomTo(zoom / 1.4); });
     zoomFitBtn.addEventListener("click", function () {
-      zoom = 1;
-      applyZoom();
+      zoomTo(1);
       viewport.scrollLeft = 0;
       viewport.scrollTop = 0;
     });
-    // Drag to pan
+    // Drag to pan (mouse)
     var dragging = false, startX, startY, scrollL, scrollT;
     viewport.addEventListener("mousedown", function (e) {
       if (zoom <= 1) return;
@@ -283,6 +308,31 @@
       dragging = false;
       if (zoom > 1) viewport.style.cursor = "grab";
     });
+    // Pinch to zoom (touch)
+    var lastPinchDist = 0, pinching = false;
+    viewport.addEventListener("touchstart", function (e) {
+      if (e.touches.length === 2) {
+        pinching = true;
+        lastPinchDist = Math.hypot(
+          e.touches[1].pageX - e.touches[0].pageX,
+          e.touches[1].pageY - e.touches[0].pageY
+        );
+      }
+    }, { passive: true });
+    viewport.addEventListener("touchmove", function (e) {
+      if (e.touches.length === 2 && pinching) {
+        var dist = Math.hypot(
+          e.touches[1].pageX - e.touches[0].pageX,
+          e.touches[1].pageY - e.touches[0].pageY
+        );
+        if (Math.abs(dist - lastPinchDist) > 5) {
+          zoomTo(zoom * (dist / lastPinchDist));
+          lastPinchDist = dist;
+        }
+        e.preventDefault();
+      }
+    }, { passive: false });
+    viewport.addEventListener("touchend", function () { pinching = false; }, { passive: true });
     closeBtn.focus();
     document.addEventListener("keydown", escHandler);
   }
