@@ -29,6 +29,17 @@
       <button id="btn-zoom-fit" class="tool-btn" title="Fit to View (0)">Fit</button>
       <span id="zoom-display" class="zoom-display">100%</span>
       <div class="separator"></div>
+      <div class="landmark-dropdown">
+        <button id="btn-landmark" class="tool-btn" title="Place Landmark (L)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </button>
+        <div class="landmark-menu" id="landmark-menu" style="display:none">
+          <button class="landmark-option" data-type="restrooms" title="Restrooms">🚻 Restrooms</button>
+          <button class="landmark-option" data-type="info" title="Information / Help Desk">ℹ️ Information</button>
+          <button class="landmark-option" data-type="water" title="Water Fountain">💧 Water Fountain</button>
+        </div>
+      </div>
+      <div class="separator"></div>
       <button id="btn-delete" class="tool-btn danger" title="Delete Selected (Del)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
       </button>
@@ -81,6 +92,11 @@
         <h3>Rectangles <span id="rect-count" class="badge">0</span></h3>
         <ul id="rect-list" class="rect-list"></ul>
       </section>
+
+      <section class="sidebar-section">
+        <h3>Landmarks <span id="landmark-count" class="badge">0</span></h3>
+        <ul id="landmark-list" class="rect-list"></ul>
+      </section>
     </aside>
 
     <!-- Canvas area -->
@@ -131,23 +147,7 @@
             <label>Directions / Description</label>
             <textarea id="prop-directions" rows="3" placeholder="e.g. Head to the 2nd floor. Located at the Computer Help Desk near the top of the stairs."></textarea>
           </div>
-          <div class="field-group">
-            <label>Color</label>
-            <div class="color-row">
-              <input type="color" id="prop-color" value="#00697f">
-              <span id="prop-color-hex" class="color-hex">#00697f</span>
-            </div>
-            <div class="color-presets">
-              <button class="color-swatch" data-color="#00697f" title="Teal (default)"></button>
-              <button class="color-swatch" data-color="#e53935" title="Red"></button>
-              <button class="color-swatch" data-color="#43a047" title="Green"></button>
-              <button class="color-swatch" data-color="#1e88e5" title="Blue"></button>
-              <button class="color-swatch" data-color="#fb8c00" title="Orange"></button>
-              <button class="color-swatch" data-color="#8e24aa" title="Purple"></button>
-              <button class="color-swatch" data-color="#6d4c41" title="Brown"></button>
-              <button class="color-swatch" data-color="#546e7a" title="Grey"></button>
-            </div>
-          </div>
+          <input type="hidden" id="prop-color" value="#00697f">
           <div class="field-group">
             <label>Position (% of image)</label>
             <div class="field-row-inline four-col">

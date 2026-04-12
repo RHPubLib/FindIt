@@ -575,11 +575,34 @@ def publish():
                 }
                 all_ranges.append(entry)
 
-        if not all_ranges:
-            return jsonify({"error": "No rectangles to publish. Save a project first."}), 400
+        # Collect landmarks from all projects
+        all_landmarks = []
+        for f in sorted(DATA_DIR.glob("*.json")):
+            try:
+                proj = json.loads(f.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+            image_url = proj.get("image", "")
+            floor_map = ""
+            if image_url.startswith("/uploads/"):
+                floor_map = f"https://findit.rhpl.org/maps/{image_url.split('/')[-1]}"
+            elif image_url:
+                floor_map = image_url
+            for lm in proj.get("landmarks", []):
+                all_landmarks.append({
+                    "x": round(lm["x"], 2),
+                    "y": round(lm["y"], 2),
+                    "type": lm.get("type", ""),
+                    "label": lm.get("label", ""),
+                    "map": floor_map,
+                })
+
+        if not all_ranges and not all_landmarks:
+            return jsonify({"error": "No data to publish. Save a project first."}), 400
 
         ranges_data = {
             "ranges": all_ranges,
+            "landmarks": all_landmarks,
             "defaultMap": "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg",
             "publishedBy": session["user"]["email"],
             "publishedAt": formatdate(usegmt=True),

@@ -120,25 +120,63 @@
       var svg = document.createElementNS(svgNS, "svg");
       svg.setAttribute("viewBox", "0 0 100 100");
       svg.setAttribute("preserveAspectRatio", "none");
-      svg.style.cssText = "position:absolute;top:8px;left:8px;width:calc(100% - 16px);height:calc(100% - 16px);pointer-events:none;";
+      svg.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;";
       var a = match.area;
+      // Area rectangle — teal highlight zone
       var rect = document.createElementNS(svgNS, "rect");
       rect.setAttribute("x", a.x);
       rect.setAttribute("y", a.y);
       rect.setAttribute("width", a.width);
       rect.setAttribute("height", a.height);
-      rect.setAttribute("fill", a.color || "#00697f");
-      rect.setAttribute("fill-opacity", a.opacity || "0.3");
-      rect.setAttribute("stroke", a.color || "#00697f");
-      rect.setAttribute("stroke-width", "0.3");
-      rect.setAttribute("stroke-opacity", "0.8");
+      rect.setAttribute("fill", "#00697f");
+      rect.setAttribute("fill-opacity", "0.18");
+      rect.setAttribute("stroke", "#00697f");
+      rect.setAttribute("stroke-width", "0.25");
+      rect.setAttribute("stroke-opacity", "0.7");
+      rect.setAttribute("rx", "0.3");
       svg.appendChild(rect);
+      // Pin marker — red dot centered in the rectangle
+      var cx = a.x + a.width / 2;
+      var cy = a.y + a.height / 2;
+      // Pulsing outer ring
+      var pulse = document.createElementNS(svgNS, "circle");
+      pulse.setAttribute("cx", cx);
+      pulse.setAttribute("cy", cy);
+      pulse.setAttribute("r", "1.2");
+      pulse.setAttribute("fill", "none");
+      pulse.setAttribute("stroke", "#e53935");
+      pulse.setAttribute("stroke-width", "0.3");
+      pulse.setAttribute("opacity", "0.6");
+      var anim = document.createElementNS(svgNS, "animate");
+      anim.setAttribute("attributeName", "r");
+      anim.setAttribute("from", "0.8");
+      anim.setAttribute("to", "2.5");
+      anim.setAttribute("dur", "1.5s");
+      anim.setAttribute("repeatCount", "indefinite");
+      pulse.appendChild(anim);
+      var animOp = document.createElementNS(svgNS, "animate");
+      animOp.setAttribute("attributeName", "opacity");
+      animOp.setAttribute("from", "0.7");
+      animOp.setAttribute("to", "0");
+      animOp.setAttribute("dur", "1.5s");
+      animOp.setAttribute("repeatCount", "indefinite");
+      pulse.appendChild(animOp);
+      svg.appendChild(pulse);
+      // Solid red dot
+      var dot = document.createElementNS(svgNS, "circle");
+      dot.setAttribute("cx", cx);
+      dot.setAttribute("cy", cy);
+      dot.setAttribute("r", "0.7");
+      dot.setAttribute("fill", "#e53935");
+      dot.setAttribute("stroke", "#fff");
+      dot.setAttribute("stroke-width", "0.2");
+      svg.appendChild(dot);
       mapWrap.appendChild(svg);
     }
     return img;
   }
 
-  function openModal(matches, config, preferredBranch) {
+  function openModal(matches, config, preferredBranch, itemTitle) {
     closeModal();
     if (!Array.isArray(matches)) matches = [matches];
     var activeIndex = 0;
@@ -155,27 +193,37 @@
       if (e.target === overlay) closeModal();
     });
     var dialog = document.createElement("div");
-    dialog.style.cssText = "position:relative;width:96vw;height:92vh;max-width:900px;display:flex;flex-direction:column;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;";
+    dialog.id = "findit-dialog";
+    dialog.style.cssText = "position:relative;width:94vw;max-height:90vh;max-width:1200px;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;";
     // Header bar
     var header = document.createElement("div");
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#00697f;color:#fff;padding:10px 20px;border-radius:8px 8px 0 0;flex-shrink:0;";
+    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#00697f;color:#fff;padding:14px 24px;border-radius:10px 10px 0 0;flex-shrink:0;gap:16px;";
+    var headerLeft = document.createElement("div");
+    headerLeft.style.cssText = "display:flex;align-items:center;gap:14px;min-width:0;";
+    var logo = document.createElement("img");
+    logo.src = "https://findit.rhpl.org/maps/rhpl-logo-white.png";
+    logo.alt = "RHPL";
+    logo.style.cssText = "height:40px;width:auto;flex-shrink:0;opacity:0.95;";
+    headerLeft.appendChild(logo);
     var title = document.createElement("h2");
-    title.style.cssText = "margin:0;font-size:1rem;font-weight:600;color:#fff;";
+    title.style.cssText = "margin:0;font-size:1.2rem;font-weight:600;color:#fff;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
     title.textContent = matches[activeIndex].label || "Shelf Location";
-    header.appendChild(title);
-    var headerRight = document.createElement("div");
-    headerRight.style.cssText = "display:flex;align-items:center;gap:8px;";
+    headerLeft.appendChild(title);
+    header.appendChild(headerLeft);
+    // Hide title text on mobile — info panel shows it instead
+    var mobileStyle = document.createElement("style");
+    mobileStyle.textContent = "@media(max-width:600px){#findit-modal h2{display:none !important;}#findit-modal img[alt='RHPL']{height:30px !important;}}@media(min-width:601px){#findit-dialog{height:88vh !important;}}";
+    header.appendChild(mobileStyle);
     var closeBtn = document.createElement("button");
-    closeBtn.style.cssText = "font-size:1.5rem;line-height:1;background:none;border:none;cursor:pointer;color:#fff;padding:0 4px;";
+    closeBtn.style.cssText = "font-size:1.8rem;line-height:1;background:none;border:none;cursor:pointer;color:#fff;padding:4px 8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
     closeBtn.innerHTML = "&times;";
     closeBtn.setAttribute("aria-label", "Close");
     closeBtn.addEventListener("click", closeModal);
-    headerRight.appendChild(closeBtn);
-    header.appendChild(headerRight);
+    header.appendChild(closeBtn);
     dialog.appendChild(header);
     // Map container (created early so tabs can reference it)
     var mapWrap = document.createElement("div");
-    mapWrap.style.cssText = "position:relative;display:inline-block;line-height:0;padding:8px;";
+    mapWrap.style.cssText = "position:relative;display:inline-block;line-height:0;padding:0;background:#fff;";
     var img; // will hold current img reference for zoom
     // Branch/floor tabs (only if multiple matches)
     if (matches.length > 1) {
@@ -203,61 +251,69 @@
           zoom = 1;
           applyZoom();
           // Update info panel
-          infoTitle.textContent = m.collection || "";
-          var existingDir = infoPanel.querySelector("[data-directions]");
-          if (existingDir) existingDir.remove();
-          if (m.directions) {
-            var dir = document.createElement("div");
-            dir.style.cssText = "font-size:13px;color:#555;line-height:1.5;";
-            dir.setAttribute("data-directions", "1");
-            dir.textContent = m.directions;
-            infoPanel.appendChild(dir);
+          var ic = document.getElementById("findit-info-collection");
+          if (ic) ic.textContent = m.collection || m.label || "";
+          var id = document.getElementById("findit-info-directions");
+          if (id) {
+            id.textContent = m.directions || "";
+            id.style.display = m.directions ? "" : "none";
           }
         });
         tabBar.appendChild(tab);
       });
       dialog.appendChild(tabBar);
     }
-    // Zoom controls
+    // Map viewport (scrollable) with floating zoom controls
+    var viewportWrap = document.createElement("div");
+    viewportWrap.style.cssText = "position:relative;flex:1;min-height:0;overflow:hidden;background:#f0f0f0;";
+    var viewport = document.createElement("div");
+    viewport.style.cssText = "overflow:auto;width:100%;height:100%;-webkit-overflow-scrolling:touch;background:#f0f0f0;";
+    img = renderMapContent(mapWrap, matches[activeIndex], config);
+    viewport.appendChild(mapWrap);
+    viewportWrap.appendChild(viewport);
+    // Floating zoom controls
     var zoomBar = document.createElement("div");
-    zoomBar.style.cssText = "display:flex;align-items:center;gap:12px;padding:8px 20px;background:#f5f5f5;border-bottom:1px solid #e0e0e0;flex-shrink:0;";
-    var zoomBtnStyle = "background:none;border:1px solid #00697f;color:#00697f;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;";
+    zoomBar.style.cssText = "position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:10;";
+    var zoomBtnStyle = "background:#fff;border:1px solid #ccc;color:#00697f;width:40px;height:40px;border-radius:6px;cursor:pointer;font-size:18px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;";
     var zoomInBtn = document.createElement("button");
     zoomInBtn.style.cssText = zoomBtnStyle;
-    zoomInBtn.textContent = "+ Zoom In";
+    zoomInBtn.textContent = "+";
     var zoomOutBtn = document.createElement("button");
     zoomOutBtn.style.cssText = zoomBtnStyle;
-    zoomOutBtn.textContent = "- Zoom Out";
+    zoomOutBtn.innerHTML = "&minus;";
     var zoomFitBtn = document.createElement("button");
-    zoomFitBtn.style.cssText = zoomBtnStyle;
+    zoomFitBtn.style.cssText = zoomBtnStyle + "font-size:12px;font-weight:600;color:#00697f;";
     zoomFitBtn.textContent = "Fit";
     zoomBar.appendChild(zoomInBtn);
     zoomBar.appendChild(zoomOutBtn);
     zoomBar.appendChild(zoomFitBtn);
-    dialog.appendChild(zoomBar);
-    // Map viewport (scrollable)
-    var viewport = document.createElement("div");
-    viewport.style.cssText = "overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;";
-    img = renderMapContent(mapWrap, matches[activeIndex], config);
-    viewport.appendChild(mapWrap);
-    dialog.appendChild(viewport);
+    viewportWrap.appendChild(zoomBar);
+    dialog.appendChild(viewportWrap);
     // Info panel below the map
     var infoPanel = document.createElement("div");
-    infoPanel.style.cssText = "padding:12px 20px;border-top:2px solid #00697f;flex-shrink:0;background:#fff;";
+    infoPanel.style.cssText = "padding:16px 24px;border-top:3px solid #00697f;flex-shrink:0;background:#f8fafb;border-radius:0 0 10px 10px;border-left:4px solid #00697f;margin:0;";
     var activeMatch = matches[activeIndex];
-    var infoTitle = document.createElement("div");
-    infoTitle.style.cssText = "font-size:14px;font-weight:600;color:#00697f;margin-bottom:4px;";
-    infoTitle.textContent = activeMatch.collection || "";
-    infoPanel.appendChild(infoTitle);
-    if (activeMatch.directions) {
-      var infoDir = document.createElement("div");
-      infoDir.style.cssText = "font-size:13px;color:#555;line-height:1.5;";
-      infoDir.textContent = activeMatch.directions;
-      infoPanel.appendChild(infoDir);
+    // Item title
+    if (itemTitle) {
+      var infoItemName = document.createElement("div");
+      infoItemName.style.cssText = "font-size:18px;font-weight:700;color:#222;margin-bottom:6px;line-height:1.3;";
+      infoItemName.textContent = itemTitle;
+      infoItemName.id = "findit-info-item";
+      infoPanel.appendChild(infoItemName);
     }
-    if (infoTitle.textContent || activeMatch.directions) {
-      dialog.appendChild(infoPanel);
-    }
+    // Collection with pin icon
+    var infoCollectionEl = document.createElement("div");
+    infoCollectionEl.style.cssText = "font-size:15px;font-weight:600;color:#00697f;margin-bottom:8px;";
+    infoCollectionEl.innerHTML = "&#128205; " + (activeMatch.collection || activeMatch.label || "");
+    infoCollectionEl.id = "findit-info-collection";
+    infoPanel.appendChild(infoCollectionEl);
+    // Directions
+    var infoDirEl = document.createElement("div");
+    infoDirEl.style.cssText = "font-size:15px;color:#444;line-height:1.6;";
+    infoDirEl.id = "findit-info-directions";
+    infoDirEl.textContent = activeMatch.directions || "";
+    if (activeMatch.directions) infoPanel.appendChild(infoDirEl);
+    dialog.appendChild(infoPanel);
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
     // Zoom — direct image sizing (no CSS transform)
@@ -265,7 +321,7 @@
     function initBaseWidth() {
       var curImg = mapWrap.querySelector("img");
       if (curImg) {
-        baseWidth = viewport.clientWidth - 16;
+        baseWidth = viewport.clientWidth;
         curImg.style.width = baseWidth + "px";
         curImg.style.maxWidth = "none";
         // Size SVG overlay to match
@@ -386,7 +442,13 @@
     btn.textContent = config.buttonLabel || "View Shelf Location";
     btn.addEventListener("click", function (e) {
       e.preventDefault();
-      openModal(matches, config, preferredBranch);
+      // Try to get the item title from the card
+      var itemTitle = "";
+      if (card) {
+        var titleEl = card.querySelector("h2 a, h2, h3 a, h3, [data-automation-id*='title']");
+        if (titleEl) itemTitle = (titleEl.textContent || "").trim();
+      }
+      openModal(matches, config, preferredBranch, itemTitle);
     });
     // Find action buttons within this specific card
     var fseBtn = card ? card.querySelector('[data-automation-id="find-specific-edition-btn"]') : null;
