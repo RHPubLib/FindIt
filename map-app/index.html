@@ -30,11 +30,19 @@
 
   <!-- Main content area -->
   <div class="map-content">
+    <!-- Collapsed results bar (shown when results are minimized) -->
+    <div class="map-results-bar" id="results-bar" style="display:none"
+         onclick="document.getElementById('results-panel').style.display='flex';document.getElementById('results-bar').style.display='none'">
+      <span class="map-results-bar-text" id="results-bar-text">Results</span>
+      <span class="map-results-bar-action">Expand</span>
+    </div>
+
     <!-- Results panel (hidden until search) -->
-    <aside class="map-results-panel" id="results-panel" hidden>
+    <aside class="map-results-panel" id="results-panel" style="display:none">
       <div class="map-results-header">
         <h2 class="map-results-title">Results</h2>
-        <button class="map-results-close" id="results-close" aria-label="Close results">&times;</button>
+        <button type="button" class="map-results-close-btn" id="results-close" aria-label="Minimize results"
+                onclick="document.getElementById('results-panel').style.display='none';document.getElementById('results-bar').style.display='flex'">Minimize</button>
       </div>
       <div class="map-results-list" id="results-list"></div>
     </aside>

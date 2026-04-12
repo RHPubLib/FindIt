@@ -44,6 +44,11 @@
       clearSearch();
     });
 
+    // Wire up results panel close button
+    document.getElementById("results-close").addEventListener("click", function () {
+      document.getElementById("results-panel").style.display = "none";
+    });
+
     // Check for kiosk mode
     if (getParam("kiosk") === "1") {
       document.body.classList.add("kiosk-mode");
@@ -65,7 +70,7 @@
 
     var resultsPanel = document.getElementById("results-panel");
     var resultsList = document.getElementById("results-list");
-    resultsPanel.hidden = false;
+    resultsPanel.style.display = "flex";
     resultsList.innerHTML = '<li class="result-loading">Searching...</li>';
 
     var xhr = new XMLHttpRequest();
@@ -98,6 +103,19 @@
       resultsList.innerHTML = '<li class="result-empty">No results found</li>';
       return;
     }
+
+    // Sort: mapped items first, then available, then the rest
+    results.sort(function (a, b) {
+      if (a.match && !b.match) return -1;
+      if (!a.match && b.match) return 1;
+      if (a.available && !b.available) return -1;
+      if (!a.available && b.available) return 1;
+      return 0;
+    });
+
+    // Update the collapsed bar text
+    var barText = document.getElementById("results-bar-text");
+    if (barText) barText.textContent = total + " result" + (total !== 1 ? "s" : "");
 
     resultsList.innerHTML = "";
     var header = document.createElement("li");
@@ -138,6 +156,9 @@
         li.appendChild(loc);
 
         li.addEventListener("click", function () {
+          // Minimize results panel so the map is visible
+          document.getElementById("results-panel").style.display = "none";
+          document.getElementById("results-bar").style.display = "flex";
           MapViewer.highlight(item.match);
         });
       }
@@ -153,7 +174,8 @@
 
     searchInput.value = "";
     searchClear.hidden = true;
-    resultsPanel.hidden = true;
+    resultsPanel.style.display = "none";
+    document.getElementById("results-bar").style.display = "none";
     MapViewer.clearHighlight();
   }
 

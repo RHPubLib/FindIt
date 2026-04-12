@@ -2,21 +2,22 @@
  * Map App – Viewer
  *
  * Interactive floor plan viewer with floor tabs, zoom, pan, and
- * touch gesture support. Adapted from findit-rhpl.js modal code.
+ * touch gesture support.
+ *
+ * Zoom approach: sets the image width directly in pixels (no CSS transform).
+ * This lets the browser handle scrolling natively in all directions.
  */
 
 var MapViewer = {
   currentFloor: null,
   currentHighlight: null,
   zoom: 1,
+  _baseWidth: 0,   // image width at zoom=1 (fit to viewport)
   _viewport: null,
   _container: null,
   _tabBar: null
 };
 
-/**
- * Initialize the map viewer.
- */
 MapViewer.init = function () {
   this._viewport = document.getElementById("map-viewport");
   this._container = document.getElementById("map-container");
@@ -26,13 +27,9 @@ MapViewer.init = function () {
   this._bindZoom();
   this._bindPan();
 
-  // Show default floor
   this.showFloor(MapConfig.defaultFloor);
 };
 
-/**
- * Build floor tabs from config.
- */
 MapViewer._buildTabs = function () {
   var self = this;
   this._tabBar.innerHTML = "";
@@ -53,9 +50,6 @@ MapViewer._buildTabs = function () {
   });
 };
 
-/**
- * Switch to a floor and optionally highlight a match.
- */
 MapViewer.showFloor = function (floorId, highlight) {
   var floor = null;
   for (var i = 0; i < MapConfig.floors.length; i++) {
@@ -77,56 +71,59 @@ MapViewer.showFloor = function (floorId, highlight) {
   var match = highlight || null;
   MapEngine.renderMapContent(this._container, match, floor.map);
 
-  // Reset zoom
+  // Reset zoom to fit
   this.zoom = 1;
-  this._applyZoom();
-  this._viewport.scrollLeft = 0;
-  this._viewport.scrollTop = 0;
-
+  this._baseWidth = 0;
   this.currentHighlight = highlight || null;
+
+  // Once image loads, set base width and apply zoom
+  var self = this;
+  var img = this._container.querySelector("img");
+  if (img) {
+    var onReady = function () {
+      // Base width = viewport width (image fits to container at zoom 1)
+      self._baseWidth = self._viewport.clientWidth;
+      img.style.width = self._baseWidth + "px";
+      img.style.maxWidth = "none";
+      self._viewport.scrollLeft = 0;
+      self._viewport.scrollTop = 0;
+    };
+    if (img.complete && img.naturalWidth) onReady();
+    else img.addEventListener("load", onReady);
+  }
 };
 
-/**
- * Highlight a match on the map (switches floor if needed).
- */
 MapViewer.highlight = function (match) {
-  // Find which floor this match belongs to
   var floorId = this._getFloorForMatch(match);
   this.showFloor(floorId || MapConfig.defaultFloor, match);
 };
 
-/**
- * Clear any highlight and show the plain floor plan.
- */
 MapViewer.clearHighlight = function () {
   this.currentHighlight = null;
   this.showFloor(this.currentFloor);
 };
 
-/**
- * Reset to default state (default floor, no highlight, zoom fit).
- */
 MapViewer.reset = function () {
   this.currentHighlight = null;
   this.showFloor(MapConfig.defaultFloor);
 };
 
-/**
- * Determine which floor a match belongs to based on its branch.
- */
 MapViewer._getFloorForMatch = function (match) {
-  if (!match || !match.branch) return MapConfig.defaultFloor;
+  if (!match) return MapConfig.defaultFloor;
 
-  for (var i = 0; i < MapConfig.branches.length; i++) {
-    if (MapConfig.branches[i].id === match.branch) {
-      return MapConfig.branches[i].floor || MapConfig.defaultFloor;
+  if (match.branch) {
+    for (var i = 0; i < MapConfig.branches.length; i++) {
+      if (MapConfig.branches[i].id === match.branch) {
+        return MapConfig.branches[i].floor || MapConfig.defaultFloor;
+      }
     }
   }
 
-  // Fallback: try to infer from match.map URL
-  for (var f = 0; f < MapConfig.floors.length; f++) {
-    if (match.map && match.map === MapConfig.floors[f].map) {
-      return MapConfig.floors[f].id;
+  if (match.map) {
+    for (var f = 0; f < MapConfig.floors.length; f++) {
+      if (match.map === MapConfig.floors[f].map) {
+        return MapConfig.floors[f].id;
+      }
     }
   }
 
@@ -141,48 +138,62 @@ MapViewer._bindZoom = function () {
   var self = this;
 
   document.getElementById("zoom-in").addEventListener("click", function () {
-    self.zoom = Math.min(self.zoom + 0.5, 4);
-    self._applyZoom();
+    self._zoomTo(self.zoom * 1.4);
   });
 
   document.getElementById("zoom-out").addEventListener("click", function () {
-    self.zoom = Math.max(self.zoom - 0.5, 0.5);
-    self._applyZoom();
+    self._zoomTo(self.zoom / 1.4);
   });
 
   document.getElementById("zoom-fit").addEventListener("click", function () {
-    self.zoom = 1;
-    self._applyZoom();
-    self._viewport.scrollLeft = 0;
-    self._viewport.scrollTop = 0;
+    self._zoomTo(1);
   });
 };
 
-MapViewer._applyZoom = function () {
-  this._container.style.transform = "scale(" + this.zoom + ")";
+MapViewer._zoomTo = function (newZoom) {
+  newZoom = Math.min(Math.max(newZoom, 1), 6);
+  if (!this._baseWidth) return;
+
+  var vp = this._viewport;
   var img = this._container.querySelector("img");
-  if (img) {
-    if (this.zoom > 1) {
-      img.style.maxWidth = "none";
-      img.style.width = img.naturalWidth + "px";
-      this._viewport.style.cursor = "grab";
-    } else {
-      img.style.maxWidth = "100%";
-      img.style.width = "";
-      this._viewport.style.cursor = "default";
-    }
+  if (!img) return;
+
+  // Remember what fraction of the content is at viewport center
+  var sw = vp.scrollWidth || 1;
+  var sh = vp.scrollHeight || 1;
+  var fracX = (vp.scrollLeft + vp.clientWidth / 2) / sw;
+  var fracY = (vp.scrollTop + vp.clientHeight / 2) / sh;
+
+  // Apply new zoom by setting image width directly
+  this.zoom = newZoom;
+  var newWidth = this._baseWidth * this.zoom;
+  img.style.width = newWidth + "px";
+
+  // Also resize SVG overlay to match
+  var svg = this._container.querySelector("svg");
+  if (svg) {
+    svg.style.width = newWidth + "px";
+    // Maintain aspect ratio
+    var aspect = img.naturalHeight / img.naturalWidth;
+    svg.style.height = (newWidth * aspect) + "px";
   }
+
+  // Restore center point
+  var newSW = vp.scrollWidth;
+  var newSH = vp.scrollHeight;
+  vp.scrollLeft = Math.max(0, fracX * newSW - vp.clientWidth / 2);
+  vp.scrollTop = Math.max(0, fracY * newSH - vp.clientHeight / 2);
 };
 
 /* ------------------------------------------------------------------ */
-/*  Pan (mouse + touch)                                               */
+/*  Pan (mouse + touch pinch)                                         */
 /* ------------------------------------------------------------------ */
 
 MapViewer._bindPan = function () {
   var self = this;
   var dragging = false, startX, startY, scrollL, scrollT;
 
-  // Mouse pan
+  // Mouse drag to pan
   this._viewport.addEventListener("mousedown", function (e) {
     if (self.zoom <= 1) return;
     dragging = true;
@@ -205,31 +216,13 @@ MapViewer._bindPan = function () {
     self._viewport.classList.remove("dragging");
   });
 
-  // Touch pan
-  var touchStartX, touchStartY, touchScrollL, touchScrollT;
-
-  this._viewport.addEventListener("touchstart", function (e) {
-    if (e.touches.length === 1 && self.zoom > 1) {
-      touchStartX = e.touches[0].pageX;
-      touchStartY = e.touches[0].pageY;
-      touchScrollL = self._viewport.scrollLeft;
-      touchScrollT = self._viewport.scrollTop;
-    }
-  }, { passive: true });
-
-  this._viewport.addEventListener("touchmove", function (e) {
-    if (e.touches.length === 1 && self.zoom > 1) {
-      self._viewport.scrollLeft = touchScrollL - (e.touches[0].pageX - touchStartX);
-      self._viewport.scrollTop = touchScrollT - (e.touches[0].pageY - touchStartY);
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  // Pinch to zoom
+  // Pinch to zoom (touch)
   var lastPinchDist = 0;
+  var pinching = false;
 
   this._viewport.addEventListener("touchstart", function (e) {
     if (e.touches.length === 2) {
+      pinching = true;
       lastPinchDist = Math.hypot(
         e.touches[1].pageX - e.touches[0].pageX,
         e.touches[1].pageY - e.touches[0].pageY
@@ -238,18 +231,21 @@ MapViewer._bindPan = function () {
   }, { passive: true });
 
   this._viewport.addEventListener("touchmove", function (e) {
-    if (e.touches.length === 2) {
+    if (e.touches.length === 2 && pinching) {
       var dist = Math.hypot(
         e.touches[1].pageX - e.touches[0].pageX,
         e.touches[1].pageY - e.touches[0].pageY
       );
-      var delta = dist - lastPinchDist;
-      if (Math.abs(delta) > 10) {
-        self.zoom = Math.min(Math.max(self.zoom + (delta > 0 ? 0.25 : -0.25), 0.5), 4);
-        self._applyZoom();
+      if (Math.abs(dist - lastPinchDist) > 5) {
+        var scale = dist / lastPinchDist;
+        self._zoomTo(self.zoom * scale);
         lastPinchDist = dist;
       }
       e.preventDefault();
     }
   }, { passive: false });
+
+  this._viewport.addEventListener("touchend", function () {
+    pinching = false;
+  }, { passive: true });
 };
