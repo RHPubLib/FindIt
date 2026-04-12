@@ -202,6 +202,17 @@
           img = renderMapContent(mapWrap, m, config);
           zoom = 1;
           applyZoom();
+          // Update info panel
+          infoTitle.textContent = m.collection || "";
+          var existingDir = infoPanel.querySelector("[data-directions]");
+          if (existingDir) existingDir.remove();
+          if (m.directions) {
+            var dir = document.createElement("div");
+            dir.style.cssText = "font-size:13px;color:#555;line-height:1.5;";
+            dir.setAttribute("data-directions", "1");
+            dir.textContent = m.directions;
+            infoPanel.appendChild(dir);
+          }
         });
         tabBar.appendChild(tab);
       });
@@ -230,6 +241,23 @@
     img = renderMapContent(mapWrap, matches[activeIndex], config);
     viewport.appendChild(mapWrap);
     dialog.appendChild(viewport);
+    // Info panel below the map
+    var infoPanel = document.createElement("div");
+    infoPanel.style.cssText = "padding:12px 20px;border-top:2px solid #00697f;flex-shrink:0;background:#fff;";
+    var activeMatch = matches[activeIndex];
+    var infoTitle = document.createElement("div");
+    infoTitle.style.cssText = "font-size:14px;font-weight:600;color:#00697f;margin-bottom:4px;";
+    infoTitle.textContent = activeMatch.collection || "";
+    infoPanel.appendChild(infoTitle);
+    if (activeMatch.directions) {
+      var infoDir = document.createElement("div");
+      infoDir.style.cssText = "font-size:13px;color:#555;line-height:1.5;";
+      infoDir.textContent = activeMatch.directions;
+      infoPanel.appendChild(infoDir);
+    }
+    if (infoTitle.textContent || activeMatch.directions) {
+      dialog.appendChild(infoPanel);
+    }
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
     // Zoom — direct image sizing (no CSS transform)

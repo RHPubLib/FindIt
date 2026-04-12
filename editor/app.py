@@ -253,6 +253,157 @@ def polaris_shelflocations():
         return jsonify({"error": str(e)}), 502
 
 
+# ── Public API (no auth — used by map.rhpl.org) ──────────────────────
+
+@app.route("/api/search")
+def public_search():
+    """Search the Polaris catalog and return results with location matches."""
+    from urllib.parse import quote
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify({"error": "Query required"}), 400
+    limit = min(int(request.args.get("limit", 10)), 100)
+
+    try:
+        path = (f"/REST/public/v1/{PAPI_LANG_ID}/{PAPI_APP_ID}/1"
+                f"/search/bibs/keyword/KW?q={quote(query)}&page=1&bibsperpage={limit}")
+        data = papi_get(path)
+        rows = data.get("BibSearchRows", [])
+
+        # Load ranges for matching
+        ranges_file = DATA_DIR / ".." / "data" / "ranges_cache.json"
+        ranges = []
+        for f in sorted(DATA_DIR.glob("*.json")):
+            try:
+                proj = json.loads(f.read_text())
+                for rect in proj.get("rectangles", []):
+                    props = rect.get("properties", {})
+                    entry = {}
+                    collection = (props.get("collection") or "").strip()
+                    if collection:
+                        entry["collection"] = collection
+                    if (props.get("label") or "").strip():
+                        entry["label"] = props["label"].strip()
+                    if (props.get("directions") or "").strip():
+                        entry["directions"] = props["directions"].strip()
+                    entry["area"] = {
+                        "x": round(rect["x"], 2),
+                        "y": round(rect["y"], 2),
+                        "width": round(rect["width"], 2),
+                        "height": round(rect["height"], 2),
+                        "color": rect.get("color", "#00697f"),
+                    }
+                    entry["map"] = proj.get("image", "")
+                    if entry["map"].startswith("/uploads/"):
+                        img_name = entry["map"].split("/")[-1]
+                        entry["map"] = f"https://findit.rhpl.org/maps/{img_name}"
+                    ranges.append(entry)
+            except (json.JSONDecodeError, OSError):
+                continue
+
+        results = []
+        for row in rows:
+            call_number = row.get("CallNumber", "")
+            title = row.get("Title", "")
+            author = row.get("Author", "")
+
+            # Try to find a matching range by checking collection name
+            # against all available text fields from the bib record
+            match = None
+            searchable = " ".join([
+                title or "", author or "", call_number or "",
+                row.get("KWIC", "") or "",
+                row.get("Summary", "") or "",
+            ]).lower()
+            for r in ranges:
+                coll = r.get("collection", "").lower()
+                if not coll:
+                    continue
+                # Check if collection name appears in any bib field
+                if coll in searchable:
+                    match = r
+                    break
+                # Also check if the bib text appears in the collection name
+                # (e.g., author "Innovative Item" matches collection "Innovative Items")
+                words = coll.split()
+                if len(words) >= 2 and words[0] in searchable and words[1].rstrip("s") in searchable:
+                    match = r
+                    break
+
+            results.append({
+                "bibId": row.get("ControlNumber"),
+                "title": title,
+                "author": author,
+                "callNumber": call_number,
+                "format": row.get("Medium", ""),
+                "publicationDate": row.get("PublicationDate", ""),
+                "summary": row.get("Summary", ""),
+                "thumbnail": row.get("WebLink", ""),
+                "available": row.get("SystemItemsIn", 0) > 0,
+                "totalCopies": row.get("SystemItemsTotal", 0),
+                "copiesIn": row.get("SystemItemsIn", 0),
+                "holds": row.get("CurrentHoldRequests", 0),
+                "match": match,
+            })
+
+        return jsonify({
+            "query": query,
+            "total": data.get("TotalRecordsFound", 0),
+            "results": results,
+        })
+    except Exception as e:
+        log.error("Search error: %s", e)
+        return jsonify({"error": str(e)}), 502
+
+
+@app.route("/api/ranges")
+def public_ranges():
+    """Serve the current ranges.json (no auth required)."""
+    all_ranges = []
+    for f in sorted(DATA_DIR.glob("*.json")):
+        try:
+            proj = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        for rect in proj.get("rectangles", []):
+            props = rect.get("properties", {})
+            entry = {}
+            collection = (props.get("collection") or "").strip()
+            if collection:
+                entry["collection"] = collection
+            start = (props.get("callStart") or "").strip()
+            end = (props.get("callEnd") or "").strip()
+            if start and end:
+                entry["start"] = start
+                entry["end"] = end
+            if (props.get("label") or "").strip():
+                entry["label"] = props["label"].strip()
+            if (props.get("directions") or "").strip():
+                entry["directions"] = props["directions"].strip()
+            image_url = proj.get("image", "")
+            if image_url.startswith("/uploads/"):
+                img_name = image_url.split("/")[-1]
+                entry["map"] = f"https://findit.rhpl.org/maps/{img_name}"
+            elif image_url:
+                entry["map"] = image_url
+            entry["x"] = round(rect["x"] + rect["width"] / 2, 2)
+            entry["y"] = round(rect["y"] + rect["height"] / 2, 2)
+            entry["area"] = {
+                "x": round(rect["x"], 2),
+                "y": round(rect["y"], 2),
+                "width": round(rect["width"], 2),
+                "height": round(rect["height"], 2),
+                "color": rect.get("color", "#00697f"),
+            }
+            all_ranges.append(entry)
+    return jsonify({"ranges": all_ranges, "defaultMap": "https://findit.rhpl.org/maps/RHPL-First-Floor.jpg"})
+
+
+@app.route("/api/health")
+def health():
+    return jsonify({"status": "ok"})
+
+
 # ── API: Projects ─────────────────────────────────────────────────────
 
 @app.route("/api/projects")
@@ -336,6 +487,8 @@ def export_findit():
             entry["end"] = end
         if (props.get("label") or "").strip():
             entry["label"] = props["label"].strip()
+        if (props.get("directions") or "").strip():
+            entry["directions"] = props["directions"].strip()
         if image_url:
             entry["map"] = image_url
         entry["x"] = round(rect["x"] + rect["width"] / 2, 2)
@@ -402,6 +555,8 @@ def publish():
                     entry["end"] = end
                 if (props.get("label") or "").strip():
                     entry["label"] = props["label"].strip()
+                if (props.get("directions") or "").strip():
+                    entry["directions"] = props["directions"].strip()
                 # Use the floor plan URL from the project's image field
                 # Convert local upload path to production URL
                 if image_url.startswith("/uploads/"):

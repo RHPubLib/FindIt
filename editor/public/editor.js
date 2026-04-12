@@ -82,6 +82,7 @@
   const propCallStart = document.getElementById("prop-call-start");
   const propCallEnd = document.getElementById("prop-call-end");
   const propLabel = document.getElementById("prop-label");
+  const propDirections = document.getElementById("prop-directions");
   const propColor = document.getElementById("prop-color");
   const propColorHex = document.getElementById("prop-color-hex");
   const propX = document.getElementById("prop-x");
@@ -627,6 +628,7 @@
     propCallStart.value = rect.properties?.callStart || "";
     propCallEnd.value = rect.properties?.callEnd || "";
     propLabel.value = rect.properties?.label || "";
+    propDirections.value = rect.properties?.directions || "";
     propColor.value = rect.color || "#00697f";
     propColorHex.textContent = rect.color || "#00697f";
 
@@ -667,12 +669,14 @@
     rect.properties.callStart = propCallStart.value;
     rect.properties.callEnd = propCallEnd.value;
     rect.properties.label = propLabel.value;
+    rect.properties.directions = propDirections.value;
     state.dirty = true;
     updateRectList();
     render();
   }
 
   propCollection.addEventListener("input", onPropChange);
+  propDirections.addEventListener("input", onPropChange);
   propCallStart.addEventListener("input", onPropChange);
   propCallEnd.addEventListener("input", onPropChange);
   propLabel.addEventListener("input", onPropChange);

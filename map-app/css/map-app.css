@@ -456,6 +456,31 @@ html, body {
   }
 }
 
+/* ---- Item info panel ---- */
+.map-info-panel {
+  padding: 16px 20px;
+  background: #fff;
+  border-top: 2px solid #00697f;
+  flex-shrink: 0;
+}
+.map-info-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+.map-info-collection {
+  font-size: 13px;
+  font-weight: 500;
+  color: #00697f;
+  margin-bottom: 8px;
+}
+.map-info-directions {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
 /* ---- Kiosk mode overrides ---- */
 body.kiosk-mode {
   user-select: none;
