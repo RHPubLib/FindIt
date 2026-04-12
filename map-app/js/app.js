@@ -62,7 +62,88 @@
   function doSearch(query) {
     if (!query) return;
     console.log("[MapApp] Search:", query);
-    // Phase 3: call SearchAPI.search(query) and render results
+
+    var resultsPanel = document.getElementById("results-panel");
+    var resultsList = document.getElementById("results-list");
+    resultsPanel.hidden = false;
+    resultsList.innerHTML = '<li class="result-loading">Searching...</li>';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/search?q=" + encodeURIComponent(query) + "&limit=20", true);
+    xhr.onload = function () {
+      if (xhr.status !== 200) {
+        resultsList.innerHTML = '<li class="result-error">Search failed</li>';
+        return;
+      }
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data.error) {
+          resultsList.innerHTML = '<li class="result-error">' + data.error + '</li>';
+          return;
+        }
+        renderResults(data.results || [], data.total || 0);
+      } catch (e) {
+        resultsList.innerHTML = '<li class="result-error">Failed to parse results</li>';
+      }
+    };
+    xhr.onerror = function () {
+      resultsList.innerHTML = '<li class="result-error">Search failed — check connection</li>';
+    };
+    xhr.send();
+  }
+
+  function renderResults(results, total) {
+    var resultsList = document.getElementById("results-list");
+    if (!results.length) {
+      resultsList.innerHTML = '<li class="result-empty">No results found</li>';
+      return;
+    }
+
+    resultsList.innerHTML = "";
+    var header = document.createElement("li");
+    header.className = "result-header";
+    header.textContent = total + " result" + (total !== 1 ? "s" : "") + " found";
+    resultsList.appendChild(header);
+
+    results.forEach(function (item) {
+      var li = document.createElement("li");
+      li.className = "result-item" + (item.match ? " has-match" : "");
+
+      var title = document.createElement("div");
+      title.className = "result-title";
+      title.textContent = item.title || "Untitled";
+      li.appendChild(title);
+
+      if (item.author) {
+        var author = document.createElement("div");
+        author.className = "result-author";
+        author.textContent = item.author;
+        li.appendChild(author);
+      }
+
+      var meta = document.createElement("div");
+      meta.className = "result-meta";
+      var parts = [];
+      if (item.callNumber) parts.push(item.callNumber);
+      if (item.format) parts.push(item.format);
+      if (item.available) parts.push("Available");
+      else if (item.totalCopies > 0) parts.push(item.copiesIn + "/" + item.totalCopies + " in");
+      meta.textContent = parts.join(" · ");
+      li.appendChild(meta);
+
+      if (item.match) {
+        var loc = document.createElement("div");
+        loc.className = "result-location";
+        loc.textContent = item.match.label || item.match.collection || "View on map";
+        li.appendChild(loc);
+
+        li.addEventListener("click", function () {
+          MapViewer.highlight(item.match);
+        });
+      }
+
+      resultsList.appendChild(li);
+    });
   }
 
   function clearSearch() {

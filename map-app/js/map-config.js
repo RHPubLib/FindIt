@@ -21,7 +21,7 @@ var MapConfig = {
     {
       id: "2f",
       label: "2nd Floor",
-      map: "https://findit.rhpl.org/maps/RHPL%20Second%20Floor/RHPL-Second-Floor-IIC-Marked.jpg"
+      map: "https://findit.rhpl.org/maps/RHPL-Second-Floor.jpg"
     }
   ],
 
