@@ -15,7 +15,10 @@
     imageUrl: "",
     imageName: "",
     rectangles: [],       // [{id, x, y, width, height, color, properties:{...}}]
+    landmarks: [],        // [{id, x, y, type, label}]
     selectedId: null,
+    selectedLandmarkId: null,
+    landmarkPlaceType: null, // when set, next click places a landmark
     zoom: 1,
     panX: 0,
     panY: 0,
@@ -177,6 +180,52 @@
     for (const rect of state.rectangles) {
       drawRect(rect, rect.id === state.selectedId);
     }
+
+    // Draw landmarks
+    for (const lm of state.landmarks) {
+      drawLandmark(lm, lm.id === state.selectedLandmarkId);
+    }
+  }
+
+  const LANDMARK_ICONS = {
+    restrooms: "🚻",
+    info: "ℹ️",
+    water: "💧",
+  };
+
+  const LANDMARK_LABELS = {
+    restrooms: "Restrooms",
+    info: "Information",
+    water: "Water Fountain",
+  };
+
+  function drawLandmark(lm, selected) {
+    const pos = percentToCanvas(lm.x, lm.y);
+    if (!pos) return;
+    const size = 28;
+
+    // Background circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(pos.cx, pos.cy, size / 2 + 4, 0, Math.PI * 2);
+    ctx.fillStyle = selected ? "#00697f" : "#fff";
+    ctx.fill();
+    ctx.strokeStyle = selected ? "#004d5c" : "#00697f";
+    ctx.lineWidth = selected ? 2.5 : 2;
+    ctx.stroke();
+
+    // Emoji icon
+    ctx.font = size * 0.65 + "px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(LANDMARK_ICONS[lm.type] || "📍", pos.cx, pos.cy);
+
+    // Label below
+    ctx.font = "bold 10px -apple-system, sans-serif";
+    ctx.fillStyle = "#00697f";
+    ctx.textBaseline = "top";
+    ctx.fillText(lm.label || LANDMARK_LABELS[lm.type] || lm.type, pos.cx, pos.cy + size / 2 + 6);
+    ctx.restore();
   }
 
   function drawRect(rect, selected) {
@@ -254,7 +303,6 @@
   }
 
   function hitTestRect(mx, my) {
-    // Test in reverse order (top-most first)
     for (let i = state.rectangles.length - 1; i >= 0; i--) {
       const rect = state.rectangles[i];
       const tl = percentToCanvas(rect.x, rect.y);
@@ -262,6 +310,17 @@
       if (mx >= tl.cx && mx <= br.cx && my >= tl.cy && my <= br.cy) {
         return rect;
       }
+    }
+    return null;
+  }
+
+  function hitTestLandmark(mx, my) {
+    for (let i = state.landmarks.length - 1; i >= 0; i--) {
+      const lm = state.landmarks[i];
+      const pos = percentToCanvas(lm.x, lm.y);
+      if (!pos) continue;
+      const dist = Math.hypot(mx - pos.cx, my - pos.cy);
+      if (dist <= 20) return lm;
     }
     return null;
   }
@@ -304,6 +363,27 @@
 
     if (e.button !== 0) return;
 
+    // Landmark placement mode
+    if (state.landmarkPlaceType) {
+      const pct = canvasToPercent(pos.x, pos.y);
+      if (pct) {
+        state.landmarks.push({
+          id: nextId++,
+          x: pct.px,
+          y: pct.py,
+          type: state.landmarkPlaceType,
+          label: LANDMARK_LABELS[state.landmarkPlaceType] || state.landmarkPlaceType,
+        });
+        state.dirty = true;
+        state.landmarkPlaceType = null;
+        canvasArea.className = "mode-select";
+        document.getElementById("btn-landmark").classList.remove("active");
+        updateLandmarkList();
+        render();
+      }
+      return;
+    }
+
     if (state.tool === "draw") {
       // Start drawing
       const pct = canvasToPercent(pos.x, pos.y);
@@ -341,8 +421,20 @@
       return;
     }
 
+    // Check landmark hit
+    const lmHit = hitTestLandmark(pos.x, pos.y);
+    if (lmHit) {
+      selectRect(null);
+      state.selectedLandmarkId = lmHit.id;
+      updateLandmarkList();
+      render();
+      return;
+    }
+
     // Click on empty space: deselect
+    state.selectedLandmarkId = null;
     selectRect(null);
+    updateLandmarkList();
   });
 
   canvas.addEventListener("mousemove", (e) => {
@@ -822,6 +914,7 @@
       image: state.imageUrl,
       imageName: state.imageName,
       rectangles: state.rectangles,
+      landmarks: state.landmarks,
       nextId,
     };
     fetch("/api/project", {
@@ -847,8 +940,10 @@
       .then(data => {
         if (data.error) throw new Error(data.error);
         state.rectangles = data.rectangles || [];
-        nextId = data.nextId || (Math.max(0, ...state.rectangles.map(r => r.id)) + 1);
+        state.landmarks = data.landmarks || [];
+        nextId = data.nextId || (Math.max(0, ...state.rectangles.map(r => r.id), ...state.landmarks.map(l => l.id)) + 1);
         state.selectedId = null;
+        state.selectedLandmarkId = null;
         projectName.value = data.name || name;
         projectLabel.value = data.label || "";
         state.projectName = data.name || name;
@@ -864,6 +959,7 @@
           }
         }
         updateRectList();
+        updateLandmarkList();
         updatePropsPanel();
         render();
         toast(`Loaded project "${name}"`);
@@ -1109,6 +1205,69 @@
       propLabel.value = val;
     }
     onPropChange();
+  });
+
+  // ── Landmarks ───────────────────────────────────────────────────────
+
+  const btnLandmark = document.getElementById("btn-landmark");
+  const landmarkMenu = document.getElementById("landmark-menu");
+  const landmarkList = document.getElementById("landmark-list");
+  const landmarkCount = document.getElementById("landmark-count");
+
+  btnLandmark.addEventListener("click", () => {
+    landmarkMenu.style.display = landmarkMenu.style.display === "none" ? "" : "none";
+  });
+
+  // Close menu when clicking elsewhere
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".landmark-dropdown")) {
+      landmarkMenu.style.display = "none";
+    }
+  });
+
+  document.querySelectorAll(".landmark-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.landmarkPlaceType = btn.dataset.type;
+      landmarkMenu.style.display = "none";
+      btnLandmark.classList.add("active");
+      canvasArea.className = "mode-draw";
+      toast(`Click on the map to place ${LANDMARK_LABELS[btn.dataset.type]}`);
+    });
+  });
+
+  function updateLandmarkList() {
+    landmarkCount.textContent = state.landmarks.length;
+    landmarkList.innerHTML = "";
+    for (const lm of state.landmarks) {
+      const li = document.createElement("li");
+      li.className = lm.id === state.selectedLandmarkId ? "selected" : "";
+      const icon = document.createElement("span");
+      icon.textContent = LANDMARK_ICONS[lm.type] || "📍";
+      icon.style.marginRight = "6px";
+      li.appendChild(icon);
+      const text = document.createElement("span");
+      text.textContent = lm.label || LANDMARK_LABELS[lm.type] || lm.type;
+      li.appendChild(text);
+      li.addEventListener("click", () => {
+        selectRect(null);
+        state.selectedLandmarkId = lm.id;
+        updateLandmarkList();
+        render();
+      });
+      landmarkList.appendChild(li);
+    }
+  }
+
+  // Delete landmark with Delete key
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+    if ((e.key === "Delete" || e.key === "Backspace") && state.selectedLandmarkId) {
+      state.landmarks = state.landmarks.filter(l => l.id !== state.selectedLandmarkId);
+      state.selectedLandmarkId = null;
+      state.dirty = true;
+      updateLandmarkList();
+      render();
+    }
   });
 
   // ── Init ───────────────────────────────────────────────────────────
