@@ -81,15 +81,31 @@ MapViewer.showFloor = function (floorId, highlight) {
   var img = this._container.querySelector("img");
   if (img) {
     var onReady = function () {
-      // Base width = viewport width (image fits to container at zoom 1)
-      self._baseWidth = self._viewport.clientWidth;
+      // Base width = viewport width minus padding (image fits to container at zoom 1)
+      self._baseWidth = self._viewport.clientWidth - 16;
+      if (self._baseWidth < 100) self._baseWidth = self._viewport.clientWidth;
       img.style.width = self._baseWidth + "px";
       img.style.maxWidth = "none";
       self._viewport.scrollLeft = 0;
       self._viewport.scrollTop = 0;
     };
-    if (img.complete && img.naturalWidth) onReady();
-    else img.addEventListener("load", onReady);
+    if (img.complete && img.naturalWidth) {
+      // Delay slightly to let layout settle on initial page load
+      setTimeout(onReady, 50);
+    } else {
+      img.addEventListener("load", onReady);
+    }
+    // Also refit on window resize
+    if (!self._resizeBound) {
+      self._resizeBound = true;
+      window.addEventListener("resize", function () {
+        if (self.zoom <= 1) {
+          self._baseWidth = self._viewport.clientWidth - 16;
+          var curImg = self._container.querySelector("img");
+          if (curImg) curImg.style.width = self._baseWidth + "px";
+        }
+      });
+    }
   }
 };
 
