@@ -50,19 +50,24 @@
 
     <!-- Map viewer -->
     <main class="map-viewer" id="map-viewer">
-      <div class="map-viewport" id="map-viewport">
-        <div class="map-container" id="map-container"></div>
-      </div>
+      <div class="map-viewer-inner" id="map-viewer-inner">
+        <!-- Item info panel (left side on desktop, below map on mobile) -->
+        <div class="map-info-panel" id="info-panel" style="display:none"></div>
 
-      <!-- Zoom controls -->
-      <div class="map-zoom-controls">
-        <button class="map-zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
-        <button class="map-zoom-btn" id="zoom-out" aria-label="Zoom out">&minus;</button>
-        <button class="map-zoom-btn map-zoom-fit" id="zoom-fit" aria-label="Fit to view">Fit</button>
-      </div>
+        <div class="map-viewport-wrap">
+          <div class="map-viewport" id="map-viewport">
+            <div class="map-container" id="map-container"></div>
+          </div>
 
-      <!-- Item info panel (shown after clicking a search result) -->
-      <div class="map-info-panel" id="info-panel" style="display:none"></div>
+          <!-- Zoom controls -->
+          <div class="map-zoom-controls">
+            <button class="map-zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
+            <button class="map-zoom-btn" id="zoom-out" aria-label="Zoom out">&minus;</button>
+            <button class="map-zoom-btn map-zoom-fit" id="zoom-fit" aria-label="Fit to view">Fit</button>
+            <button class="map-zoom-btn map-landmark-toggle" id="landmark-toggle" aria-label="Toggle landmarks" title="Show/hide landmarks">ℹ️</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 

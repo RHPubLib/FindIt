@@ -195,7 +195,6 @@ MapViewer._bindPan = function () {
 
   // Mouse drag to pan
   this._viewport.addEventListener("mousedown", function (e) {
-    if (self.zoom <= 1) return;
     dragging = true;
     startX = e.pageX;
     startY = e.pageY;

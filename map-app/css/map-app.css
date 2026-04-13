@@ -328,6 +328,77 @@ html, body {
   flex-direction: column;
 }
 
+.map-viewer-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* On mobile, map viewport first, info panel below */
+.map-viewport-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  order: 1;
+}
+
+.map-info-panel {
+  order: 2;
+}
+
+/* Desktop: info panel on left, map on right */
+@media (min-width: 768px) {
+  .map-viewer-inner {
+    flex-direction: row;
+  }
+  .map-info-panel {
+    order: -1;
+    width: 340px;
+    min-width: 340px;
+    max-height: none !important;
+    overflow-y: auto;
+    border-top: none;
+    border-right: 3px solid #00697f;
+    border-radius: 0;
+    padding: 20px;
+  }
+  .map-info-panel .info-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .map-info-panel .info-cover {
+    width: 140px;
+    max-height: 200px;
+    margin-bottom: 12px;
+  }
+  .map-info-panel .info-item-title {
+    font-size: 18px;
+  }
+  .map-info-panel .info-author {
+    font-size: 14px;
+  }
+  .map-info-panel .info-location {
+    text-align: left;
+  }
+  .map-info-panel .info-catalog-link {
+    font-size: 14px;
+  }
+  .map-viewport-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  .map-results-bar {
+    position: fixed;
+    left: 0;
+    right: auto;
+    width: 340px;
+  }
+}
+
 .map-viewport {
   flex: 1;
   overflow: auto;
@@ -364,6 +435,7 @@ html, body {
   width: calc(100% - 16px);
   height: calc(100% - 16px);
   pointer-events: none;
+  z-index: 5;
 }
 
 /* ---- Pin marker ---- */
@@ -416,6 +488,15 @@ html, body {
 .map-zoom-fit {
   font-size: 12px;
   font-weight: 600;
+}
+
+.map-landmark-toggle {
+  font-size: 16px;
+  margin-top: 8px;
+  opacity: 1;
+}
+.map-landmark-toggle.off {
+  opacity: 0.4;
 }
 
 /* ---- Loading/empty states ---- */

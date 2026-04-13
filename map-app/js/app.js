@@ -12,18 +12,39 @@
     // Initialize the map viewer
     MapViewer.init();
 
-    // Load ranges for search matching
+    // Load ranges for search matching, then re-render to show landmarks
     MapConfig.loadRanges(function (ranges) {
-      console.log("[MapApp] Loaded " + ranges.length + " ranges");
+      console.log("[MapApp] Loaded ranges + landmarks");
+      MapViewer.showFloor(MapViewer.currentFloor);
     });
 
     // Wire up reset button
     document.getElementById("reset-btn").addEventListener("click", function () {
       MapViewer.reset();
       clearSearch();
+      setLandmarksVisible(true);
     });
 
-    // Wire up search bar (Phase 3 will add API calls)
+    // Landmark toggle
+    var landmarkToggle = document.getElementById("landmark-toggle");
+    var landmarksVisible = true;
+    landmarkToggle.addEventListener("click", function () {
+      landmarksVisible = !landmarksVisible;
+      setLandmarksVisible(landmarksVisible);
+    });
+
+    function setLandmarksVisible(visible) {
+      landmarksVisible = visible;
+      MapEngine.landmarksHidden = !visible;
+      var icons = document.querySelectorAll(".map-landmark-icon");
+      for (var i = 0; i < icons.length; i++) {
+        icons[i].style.display = visible ? "" : "none";
+      }
+      landmarkToggle.classList.toggle("off", !visible);
+      landmarkToggle.title = visible ? "Hide landmarks" : "Show landmarks";
+    }
+
+    // Wire up search bar
     var searchInput = document.getElementById("search-input");
     var searchBtn = document.getElementById("search-btn");
     var searchClear = document.getElementById("search-clear");
@@ -67,6 +88,11 @@
   function doSearch(query) {
     if (!query) return;
     console.log("[MapApp] Search:", query);
+
+    // Clear previous selection
+    document.getElementById("info-panel").style.display = "none";
+    document.getElementById("results-bar").style.display = "none";
+    MapViewer.clearHighlight();
 
     var resultsPanel = document.getElementById("results-panel");
     var resultsList = document.getElementById("results-list");
@@ -160,6 +186,12 @@
           document.getElementById("results-bar").style.display = "flex";
           MapViewer.highlight(item.match);
           showInfoPanel(item);
+          // Hide landmarks after re-render completes
+          setTimeout(function () { setLandmarksVisible(false); }, 300);
+          // On desktop, bump zoom slightly so the map is scrollable/draggable
+          if (window.innerWidth >= 768 && MapViewer.zoom <= 1) {
+            MapViewer._zoomTo(1.15);
+          }
         });
       }
 
@@ -174,7 +206,7 @@
     var match = item.match || {};
     var coverUrl = item.thumbnail || "";
     if (!coverUrl && item.isbn) {
-      coverUrl = "https://syndetics.com/index.aspx?isbn=" + item.isbn + "/MC.GIF&client=2292";
+      coverUrl = "https://syndetics.com/index.aspx?isbn=" + item.isbn + "/MC.GIF";
     }
 
     var html = '<div class="info-card">';
