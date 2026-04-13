@@ -80,32 +80,18 @@ MapViewer.showFloor = function (floorId, highlight) {
   var self = this;
   var img = this._container.querySelector("img");
   if (img) {
+    // At zoom 1, let CSS handle sizing (100% width)
+    img.style.width = "100%";
+    img.style.maxWidth = "none";
+    self._viewport.scrollLeft = 0;
+    self._viewport.scrollTop = 0;
+
     var onReady = function () {
-      // Base width = viewport width minus padding (image fits to container at zoom 1)
-      self._baseWidth = self._viewport.clientWidth - 16;
-      if (self._baseWidth < 100) self._baseWidth = self._viewport.clientWidth;
-      img.style.width = self._baseWidth + "px";
-      img.style.maxWidth = "none";
-      self._viewport.scrollLeft = 0;
-      self._viewport.scrollTop = 0;
+      // Capture base width for zoom calculations
+      self._baseWidth = img.offsetWidth;
     };
-    if (img.complete && img.naturalWidth) {
-      // Delay slightly to let layout settle on initial page load
-      setTimeout(onReady, 50);
-    } else {
-      img.addEventListener("load", onReady);
-    }
-    // Also refit on window resize
-    if (!self._resizeBound) {
-      self._resizeBound = true;
-      window.addEventListener("resize", function () {
-        if (self.zoom <= 1) {
-          self._baseWidth = self._viewport.clientWidth - 16;
-          var curImg = self._container.querySelector("img");
-          if (curImg) curImg.style.width = self._baseWidth + "px";
-        }
-      });
-    }
+    if (img.complete && img.naturalWidth) setTimeout(onReady, 50);
+    else img.addEventListener("load", onReady);
   }
 };
 
@@ -180,10 +166,17 @@ MapViewer._zoomTo = function (newZoom) {
   var fracX = (vp.scrollLeft + vp.clientWidth / 2) / sw;
   var fracY = (vp.scrollTop + vp.clientHeight / 2) / sh;
 
-  // Apply new zoom by setting image width directly
+  // Apply new zoom
   this.zoom = newZoom;
-  var newWidth = this._baseWidth * this.zoom;
-  img.style.width = newWidth + "px";
+  if (newZoom <= 1) {
+    // At zoom 1, use CSS 100% for proper responsive fit
+    img.style.width = "100%";
+    this._baseWidth = img.offsetWidth;
+  } else {
+    if (!this._baseWidth) this._baseWidth = img.offsetWidth;
+    var newWidth = this._baseWidth * this.zoom;
+    img.style.width = newWidth + "px";
+  }
 
   // Also resize SVG overlay to match
   var svg = this._container.querySelector("svg");
