@@ -191,12 +191,14 @@
     restrooms: "🚻",
     info: "ℹ️",
     water: "💧",
+    elevator: "🛗",
   };
 
   const LANDMARK_LABELS = {
     restrooms: "Restrooms",
     info: "Information",
     water: "Water Fountain",
+    elevator: "Elevator",
   };
 
   function drawLandmark(lm, selected) {
@@ -338,6 +340,9 @@
 
   function selectRect(id) {
     state.selectedId = id;
+    state.selectedLandmarkId = null;
+    var lp = document.getElementById("landmark-props");
+    if (lp) lp.style.display = "none";
     updatePropsPanel();
     updateRectList();
     render();
@@ -426,13 +431,22 @@
     if (lmHit) {
       selectRect(null);
       state.selectedLandmarkId = lmHit.id;
+      state.dragging = true;
+      state.dragType = "move-landmark";
+      state.dragStartX = pos.x;
+      state.dragStartY = pos.y;
+      state.dragOrigLandmark = { ...lmHit };
+      canvasArea.className = "mode-move";
       updateLandmarkList();
+      showLandmarkProps(lmHit);
       render();
       return;
     }
 
     // Click on empty space: deselect
     state.selectedLandmarkId = null;
+    var lp = document.getElementById("landmark-props");
+    if (lp) lp.style.display = "none";
     selectRect(null);
     updateLandmarkList();
   });
@@ -458,6 +472,8 @@
         }
       }
       if (state.tool === "select") {
+        const lmHover = hitTestLandmark(pos.x, pos.y);
+        if (lmHover) { canvasArea.className = "mode-move"; return; }
         const hit = hitTestRect(pos.x, pos.y);
         canvasArea.className = hit ? "mode-move" : "mode-select";
       }
@@ -495,10 +511,21 @@
       const dy = ((pos.y - state.dragStartY) / ir.h) * 100;
       rect.x = state.dragOrigRect.x + dx;
       rect.y = state.dragOrigRect.y + dy;
-      // Clamp to image bounds
       rect.x = Math.max(0, Math.min(100 - rect.width, rect.x));
       rect.y = Math.max(0, Math.min(100 - rect.height, rect.y));
       updatePropsPosition();
+      render();
+      return;
+    }
+
+    if (state.dragType === "move-landmark") {
+      const lm = state.landmarks.find(l => l.id === state.selectedLandmarkId);
+      if (!lm) return;
+      const ir = imageRect();
+      const dx = ((pos.x - state.dragStartX) / ir.w) * 100;
+      const dy = ((pos.y - state.dragStartY) / ir.h) * 100;
+      lm.x = Math.max(0, Math.min(100, state.dragOrigLandmark.x + dx));
+      lm.y = Math.max(0, Math.min(100, state.dragOrigLandmark.y + dy));
       render();
       return;
     }
@@ -585,7 +612,7 @@
       }
     }
 
-    if (state.dragType === "move" || state.dragType === "resize") {
+    if (state.dragType === "move" || state.dragType === "resize" || state.dragType === "move-landmark") {
       state.dirty = true;
     }
 
@@ -1213,6 +1240,42 @@
   const landmarkMenu = document.getElementById("landmark-menu");
   const landmarkList = document.getElementById("landmark-list");
   const landmarkCount = document.getElementById("landmark-count");
+  const landmarkProps = document.getElementById("landmark-props");
+  const landmarkLabelInput = document.getElementById("landmark-label");
+  const landmarkTypeDisplay = document.getElementById("landmark-type-display");
+  const btnDeleteLandmark = document.getElementById("btn-delete-landmark");
+
+  function showLandmarkProps(lm) {
+    noSelection.style.display = "none";
+    propsFields.style.display = "none";
+    landmarkProps.style.display = "";
+    landmarkTypeDisplay.textContent = (LANDMARK_ICONS[lm.type] || "📍") + " " + (LANDMARK_LABELS[lm.type] || lm.type);
+    landmarkLabelInput.value = lm.label || "";
+  }
+
+  function hideLandmarkProps() {
+    landmarkProps.style.display = "none";
+  }
+
+  landmarkLabelInput.addEventListener("input", () => {
+    const lm = state.landmarks.find(l => l.id === state.selectedLandmarkId);
+    if (!lm) return;
+    lm.label = landmarkLabelInput.value;
+    state.dirty = true;
+    updateLandmarkList();
+    render();
+  });
+
+  btnDeleteLandmark.addEventListener("click", () => {
+    if (!state.selectedLandmarkId) return;
+    state.landmarks = state.landmarks.filter(l => l.id !== state.selectedLandmarkId);
+    state.selectedLandmarkId = null;
+    state.dirty = true;
+    hideLandmarkProps();
+    noSelection.style.display = "";
+    updateLandmarkList();
+    render();
+  });
 
   btnLandmark.addEventListener("click", () => {
     landmarkMenu.style.display = landmarkMenu.style.display === "none" ? "" : "none";
