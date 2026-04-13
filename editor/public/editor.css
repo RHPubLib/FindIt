@@ -150,6 +150,12 @@ body {
   font-weight: 600;
 }
 .action-btn.publish:hover { background: #388e3c; border-color: #388e3c; }
+.action-btn.logout {
+  text-decoration: none;
+  opacity: 0.7;
+  font-size: 11px;
+}
+.action-btn.logout:hover { opacity: 1; }
 .action-btn.primary {
   background: rgba(255,255,255,0.2);
   border-color: rgba(255,255,255,0.5);
