@@ -208,6 +208,9 @@
     if (!coverUrl && item.isbn) {
       coverUrl = "https://syndetics.com/index.aspx?isbn=" + item.isbn + "/MC.GIF";
     }
+    if (!coverUrl && item.upc) {
+      coverUrl = "https://syndetics.com/index.aspx?upc=" + item.upc + "/MC.GIF";
+    }
 
     var html = '<div class="info-card">';
     if (coverUrl) {
