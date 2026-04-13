@@ -2,6 +2,8 @@
 
 Open-source shelf-mapping for [Vega Discover](https://www.iii.com/products/vega/) library catalogs. Shows patrons exactly where an item is physically located using an interactive floor map — no paid subscription required.
 
+**Hackathon Presentation (IUG 2026):** [View on Google Slides](https://docs.google.com/presentation/d/1mpRiihuq2_tfgYei5wZ-TRuKQkVyce_wi8BQwHU4XKM/edit?usp=sharing) | [Download PPTX](docs/FindIt_Hackathon_IUG_2026.pptx)
+
 ---
 
 > **This repository is a project template, not a deployment source.**
