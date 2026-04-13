@@ -156,12 +156,10 @@
         li.appendChild(loc);
 
         li.addEventListener("click", function () {
-          // Minimize results panel so the map is visible
           document.getElementById("results-panel").style.display = "none";
           document.getElementById("results-bar").style.display = "flex";
           MapViewer.highlight(item.match);
-          // Show info panel
-          showInfoPanel(item.title, item.match.collection || item.match.label, item.match.directions);
+          showInfoPanel(item);
         });
       }
 
@@ -169,12 +167,48 @@
     });
   }
 
-  function showInfoPanel(title, collection, directions) {
+  function showInfoPanel(item) {
     var panel = document.getElementById("info-panel");
-    document.getElementById("info-title").textContent = title || "";
-    document.getElementById("info-collection").textContent = collection || "";
-    document.getElementById("info-directions").textContent = directions || "";
-    panel.style.display = (title || collection || directions) ? "" : "none";
+    if (!item) { panel.style.display = "none"; return; }
+
+    var match = item.match || {};
+    var coverUrl = item.thumbnail || "";
+    if (!coverUrl && item.isbn) {
+      coverUrl = "https://covers.openlibrary.org/b/isbn/" + item.isbn + "-M.jpg";
+    }
+
+    var html = '<div class="info-card">';
+    if (coverUrl) {
+      html += '<img class="info-cover" src="' + coverUrl + '" alt="" onerror="this.style.display=\'none\'">';
+    }
+    html += '<div class="info-details">';
+    html += '<div class="info-item-title">' + (item.title || "") + '</div>';
+    if (item.author) html += '<div class="info-author">' + item.author + '</div>';
+    var meta = [];
+    if (item.format) meta.push(item.format);
+    if (item.publicationDate) meta.push(item.publicationDate);
+    if (item.callNumber) meta.push(item.callNumber);
+    if (meta.length) html += '<div class="info-meta">' + meta.join(" · ") + '</div>';
+    if (item.available) {
+      html += '<div class="info-avail available">Available (' + item.copiesIn + ' of ' + item.totalCopies + ')</div>';
+    } else if (item.totalCopies > 0) {
+      html += '<div class="info-avail checked-out">Checked Out (' + item.holds + ' holds)</div>';
+    }
+    // Catalog link
+    var cleanTitle = (item.title || "").replace(/\s*\[.*?\]\s*/g, "").trim();
+    var vegaUrl = "https://rhpl.na3.iiivega.com/search?query=" + encodeURIComponent(cleanTitle) + "&searchType=everything";
+    html += '<a class="info-catalog-link" href="' + vegaUrl + '" target="_blank">View in Catalog →</a>';
+    html += '</div></div>';
+    // Location & directions
+    if (match.collection || match.directions) {
+      html += '<div class="info-location">';
+      if (match.collection) html += '<div class="info-collection">📍 ' + match.collection + '</div>';
+      if (match.directions) html += '<div class="info-directions">' + match.directions + '</div>';
+      html += '</div>';
+    }
+
+    panel.innerHTML = html;
+    panel.style.display = "";
   }
 
   function hideInfoPanel() {

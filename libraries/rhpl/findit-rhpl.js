@@ -26,6 +26,7 @@
         window.FindItConfig.ranges = data.ranges || data;
         if (data.defaultMap) window.FindItConfig.defaultMap = data.defaultMap;
         if (data.branches) window.FindItConfig.branches = data.branches;
+        if (data.landmarks) window.FindItConfig.landmarks = data.landmarks;
       } catch (e) {
         console.error("[FindIt] Failed to parse ranges.json:", e);
       }
@@ -44,6 +45,7 @@
   var POLL_TIMEOUT  = 30000;
   var BTN_CLASS     = "findit-btn";
   var MODAL_ID      = "findit-modal";
+  var LANDMARK_ICONS = { restrooms: "🚻", info: "ℹ️", water: "💧", elevator: "🛗" };
 
   function getConfig() {
     return window.FindItConfig || null;
@@ -115,12 +117,35 @@
     img.alt = match.label || "Floor map";
     img.draggable = false;
     mapWrap.appendChild(img);
+    // Render landmarks FIRST (below highlight layer)
+    var landmarks = (config && config.landmarks) || [];
+    var mapUrl = (match && match.map) || config.defaultMap;
+    for (var li = 0; li < landmarks.length; li++) {
+      var lm = landmarks[li];
+      if (lm.map && lm.map !== mapUrl) continue;
+      var lmPin = document.createElement("div");
+      lmPin.style.cssText = "position:absolute;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);z-index:1;";
+      lmPin.style.left = lm.x + "%";
+      lmPin.style.top = lm.y + "%";
+      var lmIcon = document.createElement("span");
+      lmIcon.style.cssText = "width:36px;height:36px;background:#fff;border:2.5px solid #00697f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.25);";
+      lmIcon.textContent = LANDMARK_ICONS[lm.type] || "📍";
+      lmPin.appendChild(lmIcon);
+      if (lm.label) {
+        var lmLabel = document.createElement("span");
+        lmLabel.style.cssText = "font-size:11px;font-weight:700;color:#00697f;margin-top:3px;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 5px #fff;background:rgba(255,255,255,0.85);padding:1px 5px;border-radius:3px;";
+        lmLabel.textContent = lm.label;
+        lmPin.appendChild(lmLabel);
+      }
+      mapWrap.appendChild(lmPin);
+    }
+    // Highlight overlay ON TOP of landmarks
     if (match.area) {
       var svgNS = "http://www.w3.org/2000/svg";
       var svg = document.createElementNS(svgNS, "svg");
       svg.setAttribute("viewBox", "0 0 100 100");
       svg.setAttribute("preserveAspectRatio", "none");
-      svg.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;";
+      svg.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;";
       var a = match.area;
       // Area rectangle — teal highlight zone
       var rect = document.createElementNS(svgNS, "rect");
@@ -135,42 +160,58 @@
       rect.setAttribute("stroke-opacity", "0.7");
       rect.setAttribute("rx", "0.3");
       svg.appendChild(rect);
-      // Pin marker — red dot centered in the rectangle
+      // Animated book marker centered in the rectangle
       var cx = a.x + a.width / 2;
       var cy = a.y + a.height / 2;
-      // Pulsing outer ring
-      var pulse = document.createElementNS(svgNS, "circle");
-      pulse.setAttribute("cx", cx);
-      pulse.setAttribute("cy", cy);
-      pulse.setAttribute("r", "1.2");
-      pulse.setAttribute("fill", "none");
-      pulse.setAttribute("stroke", "#e53935");
-      pulse.setAttribute("stroke-width", "0.3");
-      pulse.setAttribute("opacity", "0.6");
-      var anim = document.createElementNS(svgNS, "animate");
-      anim.setAttribute("attributeName", "r");
-      anim.setAttribute("from", "0.8");
-      anim.setAttribute("to", "2.5");
-      anim.setAttribute("dur", "1.5s");
-      anim.setAttribute("repeatCount", "indefinite");
-      pulse.appendChild(anim);
-      var animOp = document.createElementNS(svgNS, "animate");
-      animOp.setAttribute("attributeName", "opacity");
-      animOp.setAttribute("from", "0.7");
-      animOp.setAttribute("to", "0");
-      animOp.setAttribute("dur", "1.5s");
-      animOp.setAttribute("repeatCount", "indefinite");
-      pulse.appendChild(animOp);
-      svg.appendChild(pulse);
-      // Solid red dot
-      var dot = document.createElementNS(svgNS, "circle");
-      dot.setAttribute("cx", cx);
-      dot.setAttribute("cy", cy);
-      dot.setAttribute("r", "0.7");
-      dot.setAttribute("fill", "#e53935");
-      dot.setAttribute("stroke", "#fff");
-      dot.setAttribute("stroke-width", "0.2");
-      svg.appendChild(dot);
+      var bk = document.createElementNS(svgNS, "g");
+      bk.setAttribute("transform", "translate(" + cx + "," + cy + ")");
+      // Book spine
+      var spine = document.createElementNS(svgNS, "rect");
+      spine.setAttribute("x", "-0.08"); spine.setAttribute("y", "-0.7");
+      spine.setAttribute("width", "0.16"); spine.setAttribute("height", "1.4");
+      spine.setAttribute("fill", "#00697f"); spine.setAttribute("rx", "0.04");
+      bk.appendChild(spine);
+      // Right page (static)
+      var pageR = document.createElementNS(svgNS, "rect");
+      pageR.setAttribute("x", "0.08"); pageR.setAttribute("y", "-0.65");
+      pageR.setAttribute("width", "0.7"); pageR.setAttribute("height", "1.3");
+      pageR.setAttribute("fill", "#fff"); pageR.setAttribute("stroke", "#00697f");
+      pageR.setAttribute("stroke-width", "0.08"); pageR.setAttribute("rx", "0.05");
+      bk.appendChild(pageR);
+      // Right page lines
+      for (var ln = 0; ln < 4; ln++) {
+        var line = document.createElementNS(svgNS, "line");
+        line.setAttribute("x1", "0.2"); line.setAttribute("x2", "0.65");
+        line.setAttribute("y1", -0.3 + ln * 0.3); line.setAttribute("y2", -0.3 + ln * 0.3);
+        line.setAttribute("stroke", "#b0bec5"); line.setAttribute("stroke-width", "0.04");
+        bk.appendChild(line);
+      }
+      // Left page (animated - opens and closes)
+      var pageL = document.createElementNS(svgNS, "rect");
+      pageL.setAttribute("x", "-0.78"); pageL.setAttribute("y", "-0.65");
+      pageL.setAttribute("width", "0.7"); pageL.setAttribute("height", "1.3");
+      pageL.setAttribute("fill", "#f5f5f5"); pageL.setAttribute("stroke", "#00697f");
+      pageL.setAttribute("stroke-width", "0.08"); pageL.setAttribute("rx", "0.05");
+      // Animate the left page flipping via skewY transform
+      var flipAnim = document.createElementNS(svgNS, "animateTransform");
+      flipAnim.setAttribute("attributeName", "transform");
+      flipAnim.setAttribute("type", "scale");
+      flipAnim.setAttribute("values", "1,1;0.15,1;1,1");
+      flipAnim.setAttribute("keyTimes", "0;0.5;1");
+      flipAnim.setAttribute("dur", "2.5s");
+      flipAnim.setAttribute("repeatCount", "indefinite");
+      flipAnim.setAttribute("additive", "sum");
+      pageL.appendChild(flipAnim);
+      // Anchor the flip from the spine edge
+      var pageGroup = document.createElementNS(svgNS, "g");
+      pageGroup.setAttribute("transform", "translate(-0.08, 0)");
+      var pageInner = document.createElementNS(svgNS, "g");
+      pageInner.setAttribute("transform", "translate(0.08, 0)");
+      pageL.setAttribute("x", "-0.7");
+      pageInner.appendChild(pageL);
+      pageGroup.appendChild(pageInner);
+      bk.appendChild(pageGroup);
+      svg.appendChild(bk);
       mapWrap.appendChild(svg);
     }
     return img;

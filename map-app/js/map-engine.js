@@ -116,33 +116,48 @@ MapEngine.renderMapContent = function (container, match, floorMapUrl) {
     rect.setAttribute("rx", "0.3");
     svg.appendChild(rect);
 
-    // Pin marker — pulsing red dot centered in the rectangle
+    // Animated book marker centered in the rectangle
     var cx = a.x + a.width / 2;
     var cy = a.y + a.height / 2;
-    var pulse = document.createElementNS(svgNS, "circle");
-    pulse.setAttribute("cx", cx);
-    pulse.setAttribute("cy", cy);
-    pulse.setAttribute("r", "1.2");
-    pulse.setAttribute("fill", "none");
-    pulse.setAttribute("stroke", "#e53935");
-    pulse.setAttribute("stroke-width", "0.3");
-    pulse.setAttribute("opacity", "0.6");
-    var anim = document.createElementNS(svgNS, "animate");
-    anim.setAttribute("attributeName", "r");
-    anim.setAttribute("from", "0.8"); anim.setAttribute("to", "2.5");
-    anim.setAttribute("dur", "1.5s"); anim.setAttribute("repeatCount", "indefinite");
-    pulse.appendChild(anim);
-    var animOp = document.createElementNS(svgNS, "animate");
-    animOp.setAttribute("attributeName", "opacity");
-    animOp.setAttribute("from", "0.7"); animOp.setAttribute("to", "0");
-    animOp.setAttribute("dur", "1.5s"); animOp.setAttribute("repeatCount", "indefinite");
-    pulse.appendChild(animOp);
-    svg.appendChild(pulse);
-    var dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy);
-    dot.setAttribute("r", "0.7"); dot.setAttribute("fill", "#e53935");
-    dot.setAttribute("stroke", "#fff"); dot.setAttribute("stroke-width", "0.2");
-    svg.appendChild(dot);
+    var bk = document.createElementNS(svgNS, "g");
+    bk.setAttribute("transform", "translate(" + cx + "," + cy + ")");
+    var spine = document.createElementNS(svgNS, "rect");
+    spine.setAttribute("x", "-0.08"); spine.setAttribute("y", "-0.7");
+    spine.setAttribute("width", "0.16"); spine.setAttribute("height", "1.4");
+    spine.setAttribute("fill", "#00697f"); spine.setAttribute("rx", "0.04");
+    bk.appendChild(spine);
+    var pageR = document.createElementNS(svgNS, "rect");
+    pageR.setAttribute("x", "0.08"); pageR.setAttribute("y", "-0.65");
+    pageR.setAttribute("width", "0.7"); pageR.setAttribute("height", "1.3");
+    pageR.setAttribute("fill", "#fff"); pageR.setAttribute("stroke", "#00697f");
+    pageR.setAttribute("stroke-width", "0.08"); pageR.setAttribute("rx", "0.05");
+    bk.appendChild(pageR);
+    for (var ln = 0; ln < 4; ln++) {
+      var line = document.createElementNS(svgNS, "line");
+      line.setAttribute("x1", "0.2"); line.setAttribute("x2", "0.65");
+      line.setAttribute("y1", -0.3 + ln * 0.3); line.setAttribute("y2", -0.3 + ln * 0.3);
+      line.setAttribute("stroke", "#b0bec5"); line.setAttribute("stroke-width", "0.04");
+      bk.appendChild(line);
+    }
+    var pageGroup = document.createElementNS(svgNS, "g");
+    pageGroup.setAttribute("transform", "translate(-0.08, 0)");
+    var pageInner = document.createElementNS(svgNS, "g");
+    pageInner.setAttribute("transform", "translate(0.08, 0)");
+    var pageL = document.createElementNS(svgNS, "rect");
+    pageL.setAttribute("x", "-0.7"); pageL.setAttribute("y", "-0.65");
+    pageL.setAttribute("width", "0.7"); pageL.setAttribute("height", "1.3");
+    pageL.setAttribute("fill", "#f5f5f5"); pageL.setAttribute("stroke", "#00697f");
+    pageL.setAttribute("stroke-width", "0.08"); pageL.setAttribute("rx", "0.05");
+    var flipAnim = document.createElementNS(svgNS, "animateTransform");
+    flipAnim.setAttribute("attributeName", "transform"); flipAnim.setAttribute("type", "scale");
+    flipAnim.setAttribute("values", "1,1;0.15,1;1,1"); flipAnim.setAttribute("keyTimes", "0;0.5;1");
+    flipAnim.setAttribute("dur", "2.5s"); flipAnim.setAttribute("repeatCount", "indefinite");
+    flipAnim.setAttribute("additive", "sum");
+    pageL.appendChild(flipAnim);
+    pageInner.appendChild(pageL);
+    pageGroup.appendChild(pageInner);
+    bk.appendChild(pageGroup);
+    svg.appendChild(bk);
 
     container.appendChild(svg);
   } else if (match && (match.x || match.y)) {
@@ -167,7 +182,7 @@ MapEngine.renderLandmarks = function (container, floorMapUrl) {
   var landmarks = (ranges && ranges.landmarks) || [];
   if (!landmarks.length) return;
 
-  var ICONS = { restrooms: "🚻", info: "ℹ️", water: "💧" };
+  var ICONS = { restrooms: "🚻", info: "ℹ️", water: "💧", elevator: "🛗" };
 
   var svgNS = "http://www.w3.org/2000/svg";
   var svg = document.createElementNS(svgNS, "svg");

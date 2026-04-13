@@ -37,6 +37,7 @@
           <button class="landmark-option" data-type="restrooms" title="Restrooms">🚻 Restrooms</button>
           <button class="landmark-option" data-type="info" title="Information / Help Desk">ℹ️ Information</button>
           <button class="landmark-option" data-type="water" title="Water Fountain">💧 Water Fountain</button>
+          <button class="landmark-option" data-type="elevator" title="Elevator">🛗 Elevator</button>
         </div>
       </div>
       <div class="separator"></div>
@@ -113,7 +114,20 @@
     <aside id="sidebar-right">
       <section class="sidebar-section" id="props-panel">
         <h3>Properties</h3>
-        <div id="no-selection" class="info-text">Select a rectangle to edit its properties</div>
+        <div id="no-selection" class="info-text">Select a rectangle or landmark to edit its properties</div>
+        <div id="landmark-props" style="display:none">
+          <div class="field-group">
+            <label>Landmark Type</label>
+            <div id="landmark-type-display" style="font-size:18px;margin-bottom:8px;"></div>
+          </div>
+          <div class="field-group">
+            <label>Label</label>
+            <input type="text" id="landmark-label" placeholder="e.g. Adult Reference">
+          </div>
+          <div class="field-group">
+            <button id="btn-delete-landmark" class="sidebar-btn danger-btn">Delete Landmark</button>
+          </div>
+        </div>
         <div id="props-fields" style="display:none">
           <div class="field-group">
             <label>Collection (from Polaris)</label>
