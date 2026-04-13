@@ -115,51 +115,19 @@ MapEngine.renderMapContent = function (container, match, floorMapUrl) {
     rect.setAttribute("stroke-opacity", "0.7");
     rect.setAttribute("rx", "0.3");
     svg.appendChild(rect);
-
-    // Animated book marker centered in the rectangle
-    var cx = a.x + a.width / 2;
-    var cy = a.y + a.height / 2;
-    var bk = document.createElementNS(svgNS, "g");
-    bk.setAttribute("transform", "translate(" + cx + "," + cy + ")");
-    var spine = document.createElementNS(svgNS, "rect");
-    spine.setAttribute("x", "-0.08"); spine.setAttribute("y", "-0.7");
-    spine.setAttribute("width", "0.16"); spine.setAttribute("height", "1.4");
-    spine.setAttribute("fill", "#00697f"); spine.setAttribute("rx", "0.04");
-    bk.appendChild(spine);
-    var pageR = document.createElementNS(svgNS, "rect");
-    pageR.setAttribute("x", "0.08"); pageR.setAttribute("y", "-0.65");
-    pageR.setAttribute("width", "0.7"); pageR.setAttribute("height", "1.3");
-    pageR.setAttribute("fill", "#fff"); pageR.setAttribute("stroke", "#00697f");
-    pageR.setAttribute("stroke-width", "0.08"); pageR.setAttribute("rx", "0.05");
-    bk.appendChild(pageR);
-    for (var ln = 0; ln < 4; ln++) {
-      var line = document.createElementNS(svgNS, "line");
-      line.setAttribute("x1", "0.2"); line.setAttribute("x2", "0.65");
-      line.setAttribute("y1", -0.3 + ln * 0.3); line.setAttribute("y2", -0.3 + ln * 0.3);
-      line.setAttribute("stroke", "#b0bec5"); line.setAttribute("stroke-width", "0.04");
-      bk.appendChild(line);
-    }
-    var pageGroup = document.createElementNS(svgNS, "g");
-    pageGroup.setAttribute("transform", "translate(-0.08, 0)");
-    var pageInner = document.createElementNS(svgNS, "g");
-    pageInner.setAttribute("transform", "translate(0.08, 0)");
-    var pageL = document.createElementNS(svgNS, "rect");
-    pageL.setAttribute("x", "-0.7"); pageL.setAttribute("y", "-0.65");
-    pageL.setAttribute("width", "0.7"); pageL.setAttribute("height", "1.3");
-    pageL.setAttribute("fill", "#f5f5f5"); pageL.setAttribute("stroke", "#00697f");
-    pageL.setAttribute("stroke-width", "0.08"); pageL.setAttribute("rx", "0.05");
-    var flipAnim = document.createElementNS(svgNS, "animateTransform");
-    flipAnim.setAttribute("attributeName", "transform"); flipAnim.setAttribute("type", "scale");
-    flipAnim.setAttribute("values", "1,1;0.15,1;1,1"); flipAnim.setAttribute("keyTimes", "0;0.5;1");
-    flipAnim.setAttribute("dur", "2.5s"); flipAnim.setAttribute("repeatCount", "indefinite");
-    flipAnim.setAttribute("additive", "sum");
-    pageL.appendChild(flipAnim);
-    pageInner.appendChild(pageL);
-    pageGroup.appendChild(pageInner);
-    bk.appendChild(pageGroup);
-    svg.appendChild(bk);
-
     container.appendChild(svg);
+
+    // Google Maps-style library pin as HTML element (not SVG, to avoid stretching)
+    var pinEl = document.createElement("div");
+    pinEl.style.cssText = "position:absolute;pointer-events:none;z-index:10;transform:translate(-50%,-85%);";
+    pinEl.style.left = (a.x + a.width / 2) + "%";
+    pinEl.style.top = (a.y + a.height / 2) + "%";
+    pinEl.innerHTML = '<svg width="40" height="56" viewBox="0 0 40 56" fill="none" xmlns="http://www.w3.org/2000/svg">'
+      + '<ellipse cx="20" cy="52" rx="8" ry="3" fill="rgba(0,0,0,0.2)"/>'
+      + '<path d="M20 0C9 0 0 9 0 20C0 35 20 50 20 50C20 50 40 35 40 20C40 9 31 0 20 0Z" fill="#e53935" stroke="#b71c1c" stroke-width="1.5"/>'
+      + '<circle cx="20" cy="18" r="7.5" fill="white"/>'
+      + '</svg>';
+    container.appendChild(pinEl);
   } else if (match && (match.x || match.y)) {
     var marker = document.createElement("div");
     marker.className = "map-marker";
@@ -177,6 +145,8 @@ MapEngine.renderMapContent = function (container, match, floorMapUrl) {
 /**
  * Render landmark icons on the map for the given floor.
  */
+MapEngine.landmarksHidden = false;
+
 MapEngine.renderLandmarks = function (container, floorMapUrl) {
   var ranges = MapConfig.ranges;
   var landmarks = (ranges && ranges.landmarks) || [];
@@ -184,49 +154,26 @@ MapEngine.renderLandmarks = function (container, floorMapUrl) {
 
   var ICONS = { restrooms: "🚻", info: "ℹ️", water: "💧", elevator: "🛗" };
 
-  var svgNS = "http://www.w3.org/2000/svg";
-  var svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("class", "map-svg-overlay");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "none");
-  svg.style.overflow = "visible";
-
   for (var i = 0; i < landmarks.length; i++) {
     var lm = landmarks[i];
-    // Only show landmarks for this floor
     if (lm.map && lm.map !== floorMapUrl) continue;
 
-    var g = document.createElementNS(svgNS, "g");
-    // Background circle
-    var bg = document.createElementNS(svgNS, "circle");
-    bg.setAttribute("cx", lm.x);
-    bg.setAttribute("cy", lm.y);
-    bg.setAttribute("r", "1.2");
-    bg.setAttribute("fill", "#fff");
-    bg.setAttribute("stroke", "#00697f");
-    bg.setAttribute("stroke-width", "0.2");
-    g.appendChild(bg);
-    // Icon as text
-    var text = document.createElementNS(svgNS, "text");
-    text.setAttribute("x", lm.x);
-    text.setAttribute("y", lm.y);
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("dominant-baseline", "central");
-    text.setAttribute("font-size", "1.4");
-    text.textContent = ICONS[lm.type] || "📍";
-    g.appendChild(text);
-    // Label
-    var label = document.createElementNS(svgNS, "text");
-    label.setAttribute("x", lm.x);
-    label.setAttribute("y", lm.y + 2);
-    label.setAttribute("text-anchor", "middle");
-    label.setAttribute("font-size", "0.8");
-    label.setAttribute("font-weight", "600");
-    label.setAttribute("fill", "#00697f");
-    label.textContent = lm.label || "";
-    g.appendChild(label);
-    svg.appendChild(g);
+    var pin = document.createElement("div");
+    pin.className = "map-landmark-icon";
+    pin.style.cssText = "position:absolute;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);z-index:1;";
+    if (MapEngine.landmarksHidden) pin.style.display = "none";
+    pin.style.left = lm.x + "%";
+    pin.style.top = lm.y + "%";
+    var icon = document.createElement("span");
+    icon.style.cssText = "width:36px;height:36px;background:#fff;border:2.5px solid #00697f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.25);";
+    icon.textContent = ICONS[lm.type] || "📍";
+    pin.appendChild(icon);
+    if (lm.label) {
+      var label = document.createElement("span");
+      label.style.cssText = "font-size:11px;font-weight:700;color:#00697f;margin-top:3px;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 5px #fff;background:rgba(255,255,255,0.85);padding:1px 5px;border-radius:3px;";
+      label.textContent = lm.label;
+      pin.appendChild(label);
+    }
+    container.appendChild(pin);
   }
-
-  container.appendChild(svg);
 };
