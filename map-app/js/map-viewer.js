@@ -85,15 +85,24 @@ MapViewer.showFloor = function (floorId, highlight) {
     self._viewport.scrollTop = 0;
 
     var onReady = function () {
-      // Fit image to viewport: use the smaller of width-fit or height-fit
+      // Calculate available viewport size
       var vpW = self._viewport.clientWidth - 16;
-      var vpH = self._viewport.clientHeight - 16;
+      var vpH = self._viewport.clientHeight;
+      // If viewport height is very small or 0, calculate from window
+      if (vpH < 100) {
+        var vpRect = self._viewport.getBoundingClientRect();
+        vpH = window.innerHeight - vpRect.top - 10;
+      }
+      vpH -= 16;
+      // Fit image to viewport: use the smaller of width-fit or height-fit
       var aspect = img.naturalWidth / img.naturalHeight;
       var fitByWidth = vpW;
       var fitByHeight = vpH * aspect;
       var fitWidth = Math.min(fitByWidth, fitByHeight);
-      img.style.width = fitWidth + "px";
-      self._baseWidth = fitWidth;
+      if (fitWidth > 0) {
+        img.style.width = fitWidth + "px";
+        self._baseWidth = fitWidth;
+      }
     };
     if (img.complete && img.naturalWidth) setTimeout(onReady, 50);
     else img.addEventListener("load", onReady);
@@ -175,12 +184,16 @@ MapViewer._zoomTo = function (newZoom) {
   this.zoom = newZoom;
   if (newZoom <= 1) {
     // Refit to viewport
-    var vpW = vp.clientWidth - 16;
-    var vpH = vp.clientHeight - 16;
-    var aspect = img.naturalWidth / img.naturalHeight;
-    var fitWidth = Math.min(vpW, vpH * aspect);
-    img.style.width = fitWidth + "px";
-    this._baseWidth = fitWidth;
+    var vpW2 = vp.clientWidth - 16;
+    var vpH2 = vp.clientHeight;
+    if (vpH2 < 100) vpH2 = window.innerHeight - vp.getBoundingClientRect().top - 10;
+    vpH2 -= 16;
+    var aspect2 = img.naturalWidth / img.naturalHeight;
+    var fitWidth2 = Math.min(vpW2, vpH2 * aspect2);
+    if (fitWidth2 > 0) {
+      img.style.width = fitWidth2 + "px";
+      this._baseWidth = fitWidth2;
+    }
   } else {
     if (!this._baseWidth) this._baseWidth = img.offsetWidth;
     var newWidth = this._baseWidth * this.zoom;
