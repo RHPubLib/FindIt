@@ -751,13 +751,33 @@
     propColor.value = rect.color || "#00697f";
     propColorHex.textContent = rect.color || "#00697f";
 
-    // Sync Polaris dropdowns to current values
-    const coll = rect.properties?.collection || "";
-    propPolarisCollection.value = coll;
-    if (propPolarisCollection.value !== coll) propPolarisCollection.selectedIndex = 0;
-    const shelf = rect.properties?.shelfLocation || "";
-    propPolarisShelf.value = shelf;
-    if (propPolarisShelf.value !== shelf) propPolarisShelf.selectedIndex = 0;
+    // Show saved Polaris selections as read-only badges
+    const savedColl = rect.properties?.polarisCollection || "";
+    const savedShelf = rect.properties?.polarisShelf || "";
+    console.log("[Editor] Polaris saved data:", savedColl, savedShelf);
+    // DEBUG: show saved data as alert (remove after testing)
+    if (rect.properties) {
+      document.title = "PC:" + (savedColl || "EMPTY") + " | PS:" + (savedShelf || "EMPTY");
+    }
+    const savedCollGroup = document.getElementById("saved-polaris-collection-group");
+    const savedCollEl = document.getElementById("saved-polaris-collection");
+    const savedShelfGroup = document.getElementById("saved-polaris-shelf-group");
+    const savedShelfEl = document.getElementById("saved-polaris-shelf");
+    if (savedColl) {
+      savedCollEl.textContent = savedColl;
+      savedCollGroup.style.display = "";
+    } else {
+      savedCollGroup.style.display = "none";
+    }
+    if (savedShelf) {
+      savedShelfEl.textContent = savedShelf;
+      savedShelfGroup.style.display = "";
+    } else {
+      savedShelfGroup.style.display = "none";
+    }
+    // Reset lookup dropdowns
+    propPolarisCollection.selectedIndex = 0;
+    propPolarisShelf.selectedIndex = 0;
 
     updatePropsPosition();
     updateColorSwatches();
@@ -1188,6 +1208,8 @@
           opt.textContent = `${c.name} (${c.abbr})`;
           propPolarisCollection.appendChild(opt);
         }
+        // Re-sync if a rectangle is already selected
+        if (state.selectedId) updatePropsPanel();
       })
       .catch(e => console.warn("Could not load Polaris collections:", e));
 
@@ -1203,6 +1225,8 @@
           opt.textContent = s.description;
           propPolarisShelf.appendChild(opt);
         }
+        // Re-sync if a rectangle is already selected
+        if (state.selectedId) updatePropsPanel();
       })
       .catch(e => console.warn("Could not load Polaris shelf locations:", e));
   }
@@ -1210,11 +1234,18 @@
   propPolarisCollection.addEventListener("change", () => {
     const val = propPolarisCollection.value;
     if (!val) return;
+    const rect = state.rectangles.find(r => r.id === state.selectedId);
+    if (rect) {
+      rect.properties = rect.properties || {};
+      rect.properties.polarisCollection = val;
+    }
     propCollection.value = val;
-    // Auto-fill label if empty
     if (!propLabel.value) {
       propLabel.value = val;
     }
+    // Update saved badge
+    document.getElementById("saved-polaris-collection").textContent = val;
+    document.getElementById("saved-polaris-collection-group").style.display = "";
     onPropChange();
   });
 
@@ -1225,6 +1256,10 @@
     if (!rect) return;
     rect.properties = rect.properties || {};
     rect.properties.shelfLocation = val;
+    rect.properties.polarisShelf = val;
+    // Update saved badge
+    document.getElementById("saved-polaris-shelf").textContent = val;
+    document.getElementById("saved-polaris-shelf-group").style.display = "";
     // Append to label if collection is already set
     if (propCollection.value && propLabel.value === propCollection.value) {
       propLabel.value = `${propCollection.value} – ${val}`;
