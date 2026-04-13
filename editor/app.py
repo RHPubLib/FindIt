@@ -282,6 +282,11 @@ def public_search():
                     collection = (props.get("collection") or "").strip()
                     if collection:
                         entry["collection"] = collection
+                    start = (props.get("callStart") or "").strip()
+                    end = (props.get("callEnd") or "").strip()
+                    if start and end:
+                        entry["start"] = start
+                        entry["end"] = end
                     if (props.get("label") or "").strip():
                         entry["label"] = props["label"].strip()
                     if (props.get("directions") or "").strip():
@@ -307,28 +312,43 @@ def public_search():
             title = row.get("Title", "")
             author = row.get("Author", "")
 
-            # Try to find a matching range by checking collection name
-            # against all available text fields from the bib record
+            # Try to find a matching range
             match = None
             searchable = " ".join([
                 title or "", author or "", call_number or "",
                 row.get("KWIC", "") or "",
                 row.get("Summary", "") or "",
             ]).lower()
+            cn = (call_number or "").strip().upper()
             for r in ranges:
+                # 1. Check call number range (numeric Dewey or alphabetic)
+                start = r.get("start", "").strip()
+                end = r.get("end", "").strip()
+                if start and end and cn:
+                    try:
+                        # Try numeric (Dewey) comparison
+                        cn_num = float(cn.split()[0])
+                        if float(start) <= cn_num <= float(end):
+                            match = r
+                            break
+                    except (ValueError, IndexError):
+                        pass
+                    # Try alphabetic comparison (e.g., A-K matches H)
+                    cn_alpha = cn.split()[0] if cn else ""
+                    if cn_alpha and start.upper() <= cn_alpha <= end.upper():
+                        match = r
+                        break
+                # 2. Check collection name in search text
                 coll = r.get("collection", "").lower()
-                if not coll:
-                    continue
-                # Check if collection name appears in any bib field
-                if coll in searchable:
+                if coll and coll in searchable:
                     match = r
                     break
-                # Also check if the bib text appears in the collection name
-                # (e.g., author "Innovative Item" matches collection "Innovative Items")
-                words = coll.split()
-                if len(words) >= 2 and words[0] in searchable and words[1].rstrip("s") in searchable:
-                    match = r
-                    break
+                # 3. Fuzzy collection match
+                if coll:
+                    words = coll.split()
+                    if len(words) >= 2 and words[0] in searchable and words[1].rstrip("s") in searchable:
+                        match = r
+                        break
 
             results.append({
                 "bibId": row.get("ControlNumber"),
@@ -339,6 +359,7 @@ def public_search():
                 "publicationDate": row.get("PublicationDate", ""),
                 "summary": row.get("Summary", ""),
                 "isbn": (row.get("ISBN") or "").split(" ")[0].strip(),
+                "upc": (row.get("UPC") or "").strip(),
                 "thumbnail": row.get("ThumbnailLink") or row.get("WebLink") or "",
                 "available": row.get("SystemItemsIn", 0) > 0,
                 "totalCopies": row.get("SystemItemsTotal", 0),
