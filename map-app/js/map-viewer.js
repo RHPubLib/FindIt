@@ -80,15 +80,20 @@ MapViewer.showFloor = function (floorId, highlight) {
   var self = this;
   var img = this._container.querySelector("img");
   if (img) {
-    // At zoom 1, let CSS handle sizing (100% width)
-    img.style.width = "100%";
     img.style.maxWidth = "none";
     self._viewport.scrollLeft = 0;
     self._viewport.scrollTop = 0;
 
     var onReady = function () {
-      // Capture base width for zoom calculations
-      self._baseWidth = img.offsetWidth;
+      // Fit image to viewport: use the smaller of width-fit or height-fit
+      var vpW = self._viewport.clientWidth - 16;
+      var vpH = self._viewport.clientHeight - 16;
+      var aspect = img.naturalWidth / img.naturalHeight;
+      var fitByWidth = vpW;
+      var fitByHeight = vpH * aspect;
+      var fitWidth = Math.min(fitByWidth, fitByHeight);
+      img.style.width = fitWidth + "px";
+      self._baseWidth = fitWidth;
     };
     if (img.complete && img.naturalWidth) setTimeout(onReady, 50);
     else img.addEventListener("load", onReady);
@@ -169,9 +174,13 @@ MapViewer._zoomTo = function (newZoom) {
   // Apply new zoom
   this.zoom = newZoom;
   if (newZoom <= 1) {
-    // At zoom 1, use CSS 100% for proper responsive fit
-    img.style.width = "100%";
-    this._baseWidth = img.offsetWidth;
+    // Refit to viewport
+    var vpW = vp.clientWidth - 16;
+    var vpH = vp.clientHeight - 16;
+    var aspect = img.naturalWidth / img.naturalHeight;
+    var fitWidth = Math.min(vpW, vpH * aspect);
+    img.style.width = fitWidth + "px";
+    this._baseWidth = fitWidth;
   } else {
     if (!this._baseWidth) this._baseWidth = img.offsetWidth;
     var newWidth = this._baseWidth * this.zoom;
