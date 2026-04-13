@@ -174,7 +174,7 @@
     var match = item.match || {};
     var coverUrl = item.thumbnail || "";
     if (!coverUrl && item.isbn) {
-      coverUrl = "https://covers.openlibrary.org/b/isbn/" + item.isbn + "-M.jpg";
+      coverUrl = "https://syndetics.com/index.aspx?isbn=" + item.isbn + "/MC.GIF&client=2292";
     }
 
     var html = '<div class="info-card">';
