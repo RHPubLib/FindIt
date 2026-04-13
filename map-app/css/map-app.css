@@ -418,7 +418,9 @@ html, body {
 }
 
 .map-container img {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
   height: auto;
   display: block;
   border: 1px solid var(--fi-border);
