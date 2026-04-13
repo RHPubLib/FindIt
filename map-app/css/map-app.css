@@ -404,6 +404,7 @@ html, body {
   overflow: auto;
   cursor: grab;
   min-height: 0;
+  text-align: center;
 }
 
 .map-viewport.dragging {

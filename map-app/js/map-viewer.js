@@ -84,9 +84,15 @@ MapViewer.showFloor = function (floorId, highlight) {
     self._viewport.scrollTop = 0;
 
     var onReady = function () {
-      // At zoom 1, CSS handles fit (max-width + max-height)
-      // Just capture the rendered width for zoom calculations
-      self._baseWidth = img.offsetWidth;
+      // Reset CSS constraints for initial fit
+      img.style.width = "auto";
+      img.style.maxWidth = "100%";
+      img.style.maxHeight = "calc(100vh - 140px)";
+      // Capture rendered width after CSS applies
+      setTimeout(function () {
+        self._baseWidth = img.offsetWidth;
+        if (!self._baseWidth) self._baseWidth = img.naturalWidth;
+      }, 100);
     };
     if (img.complete && img.naturalWidth) setTimeout(onReady, 50);
     else img.addEventListener("load", onReady);
@@ -176,6 +182,8 @@ MapViewer._zoomTo = function (newZoom) {
     if (!this._baseWidth) this._baseWidth = img.offsetWidth;
     var newWidth = this._baseWidth * this.zoom;
     img.style.width = newWidth + "px";
+    img.style.maxWidth = "none";
+    img.style.maxHeight = "none";
   }
 
   // Also resize SVG overlay to match
