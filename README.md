@@ -30,11 +30,11 @@ FindIt is designed mobile-first. Both the standalone map app and the Vega catalo
 
 **Standalone Map App** (`map.rhpl.org`) — Patrons search the catalog, tap a result, and see the item's shelf location highlighted on the floor plan with a Google Maps-style pin. The info card below the map shows the book cover (via Syndetics), title, author, availability, a link to the full catalog record, and walking directions to the shelf.
 
-![Mobile RHPL Map App](libraries/rhpl/mobile-map-app.png)
+<img src="libraries/rhpl/mobile-map-app.png" alt="Mobile RHPL Map App" width="300">
 
 **Vega Catalog Integration** (`iic.rhpl.org`) — When browsing items in the Vega Discover catalog, patrons tap "View Shelf Location" to open an interactive map modal. The modal includes the RHPL logo, floor plan with highlighted shelf area and pin marker, landmark icons (restrooms, elevator, reference desks), zoom controls with a landmark toggle, and a directions panel with the item name, collection, and step-by-step wayfinding text.
 
-![Mobile Vega Catalog Shelf Location](libraries/rhpl/mobile-vega-shelf-location.png)
+<img src="libraries/rhpl/mobile-vega-shelf-location.png" alt="Mobile Vega Catalog Shelf Location" width="300">
 
 Both views support pinch-to-zoom, native scrolling in all directions, and work on phones, tablets, and Google Chrome OS kiosks.
 
