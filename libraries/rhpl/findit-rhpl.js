@@ -190,12 +190,16 @@
     var zoom = 1;
     var overlay = document.createElement("div");
     overlay.id = MODAL_ID;
+    overlay.setAttribute("role", "presentation");
     overlay.style.cssText = "position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);";
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) closeModal();
     });
     var dialog = document.createElement("div");
     dialog.id = "findit-dialog";
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+    dialog.setAttribute("aria-labelledby", "findit-dialog-title");
     dialog.style.cssText = "position:relative;width:94vw;max-height:90vh;max-width:1200px;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;";
     // Header bar
     var header = document.createElement("div");
@@ -208,6 +212,7 @@
     logo.style.cssText = "height:40px;width:auto;flex-shrink:0;opacity:0.95;";
     headerLeft.appendChild(logo);
     var title = document.createElement("h2");
+    title.id = "findit-dialog-title";
     title.style.cssText = "margin:0;font-size:1.2rem;font-weight:600;color:#fff;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
     title.textContent = matches[activeIndex].label || "Shelf Location";
     headerLeft.appendChild(title);
@@ -231,7 +236,7 @@
     if (matches.length > 1) {
       var tabBar = document.createElement("div");
       tabBar.style.cssText = "display:flex;padding:0 20px;background:#f5f5f5;border-bottom:1px solid #e0e0e0;overflow-x:auto;flex-shrink:0;";
-      var tabStyle = "padding:10px 16px;font-size:13px;font-weight:500;color:#555;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;font-family:inherit;";
+      var tabStyle = "padding:10px 16px;font-size:13px;font-weight:500;color:#333;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;font-family:inherit;";
       var tabActiveExtra = "color:#00697f;border-bottom-color:#00697f;font-weight:600;";
       matches.forEach(function (m, idx) {
         var tab = document.createElement("button");
@@ -276,7 +281,7 @@
     // Floating zoom controls
     var zoomBar = document.createElement("div");
     zoomBar.style.cssText = "position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px;z-index:10;";
-    var zoomBtnStyle = "background:#fff;border:1px solid #ccc;color:#00697f;width:40px;height:40px;border-radius:6px;cursor:pointer;font-size:18px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;";
+    var zoomBtnStyle = "background:#fff;border:1px solid #ccc;color:#00697f;width:44px;height:44px;border-radius:6px;cursor:pointer;font-size:18px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;";
     var zoomInBtn = document.createElement("button");
     zoomInBtn.style.cssText = zoomBtnStyle;
     zoomInBtn.textContent = "+";
@@ -437,6 +442,19 @@
     viewport.addEventListener("touchend", function () { pinching = false; }, { passive: true });
     closeBtn.focus();
     document.addEventListener("keydown", escHandler);
+    // Focus trap — keep Tab within the modal
+    dialog.addEventListener("keydown", function (e) {
+      if (e.key !== "Tab") return;
+      var focusable = dialog.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { last.focus(); e.preventDefault(); }
+      } else {
+        if (document.activeElement === last) { first.focus(); e.preventDefault(); }
+      }
+    });
   }
 
   function closeModal() {
@@ -447,6 +465,19 @@
 
   function escHandler(e) {
     if (e.key === "Escape" || e.keyCode === 27) closeModal();
+    // Zoom with +/- keys
+    var modal = document.getElementById(MODAL_ID);
+    if (!modal) return;
+    var vp = modal.querySelector("div[style*='overflow:auto']");
+    if (e.key === "=" || e.key === "+") { e.preventDefault(); var zIn = modal.querySelector("button"); if (zIn) zIn.click(); }
+    if (e.key === "-") { e.preventDefault(); }
+    // Arrow key panning
+    if (vp) {
+      if (e.key === "ArrowLeft") { vp.scrollLeft -= 60; e.preventDefault(); }
+      if (e.key === "ArrowRight") { vp.scrollLeft += 60; e.preventDefault(); }
+      if (e.key === "ArrowUp") { vp.scrollTop -= 60; e.preventDefault(); }
+      if (e.key === "ArrowDown") { vp.scrollTop += 60; e.preventDefault(); }
+    }
   }
 
   function injectButton(row, matches, config, preferredBranch) {

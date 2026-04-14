@@ -65,6 +65,27 @@
       clearSearch();
     });
 
+    // Keyboard shortcuts
+    document.addEventListener("keydown", function (e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "Escape") {
+        var rp = document.getElementById("results-panel");
+        if (rp && rp.style.display !== "none") {
+          rp.style.display = "none";
+          document.getElementById("results-bar").style.display = "flex";
+        } else {
+          clearSearch();
+        }
+      }
+      if (e.key === "=" || e.key === "+") { MapViewer._zoomTo(MapViewer.zoom * 1.4); e.preventDefault(); }
+      if (e.key === "-") { MapViewer._zoomTo(MapViewer.zoom / 1.4); e.preventDefault(); }
+      var PAN = 60;
+      if (e.key === "ArrowLeft") { MapViewer._viewport.scrollLeft -= PAN; e.preventDefault(); }
+      if (e.key === "ArrowRight") { MapViewer._viewport.scrollLeft += PAN; e.preventDefault(); }
+      if (e.key === "ArrowUp") { MapViewer._viewport.scrollTop -= PAN; e.preventDefault(); }
+      if (e.key === "ArrowDown") { MapViewer._viewport.scrollTop += PAN; e.preventDefault(); }
+    });
+
     // Wire up results panel close button
     document.getElementById("results-close").addEventListener("click", function () {
       document.getElementById("results-panel").style.display = "none";
@@ -144,6 +165,9 @@
     if (barText) barText.textContent = total + " result" + (total !== 1 ? "s" : "");
 
     resultsList.innerHTML = "";
+    // Announce to screen readers
+    var srStatus = document.getElementById("sr-status");
+    if (srStatus) srStatus.textContent = total + " result" + (total !== 1 ? "s" : "") + " found";
     var header = document.createElement("li");
     header.className = "result-header";
     header.textContent = total + " result" + (total !== 1 ? "s" : "") + " found";

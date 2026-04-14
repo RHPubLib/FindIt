@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Library Map - Rochester Hills Public Library</title>
   <link rel="stylesheet" href="css/map-app.css">
 </head>
@@ -32,11 +32,12 @@
   <!-- Main content area -->
   <div class="map-content">
     <!-- Collapsed results bar (shown when results are minimized) -->
-    <div class="map-results-bar" id="results-bar" style="display:none"
-         onclick="document.getElementById('results-panel').style.display='flex';document.getElementById('results-bar').style.display='none'">
+    <button type="button" class="map-results-bar" id="results-bar" style="display:none"
+         onclick="document.getElementById('results-panel').style.display='flex';document.getElementById('results-bar').style.display='none'"
+         aria-label="Expand search results">
       <span class="map-results-bar-text" id="results-bar-text">Results</span>
       <span class="map-results-bar-action">Expand</span>
-    </div>
+    </button>
 
     <!-- Results panel (hidden until search) -->
     <aside class="map-results-panel" id="results-panel" style="display:none">
@@ -45,7 +46,7 @@
         <button type="button" class="map-results-close-btn" id="results-close" aria-label="Minimize results"
                 onclick="document.getElementById('results-panel').style.display='none';document.getElementById('results-bar').style.display='flex'">Minimize</button>
       </div>
-      <div class="map-results-list" id="results-list"></div>
+      <div class="map-results-list" id="results-list" aria-live="polite" aria-atomic="false" role="list"></div>
     </aside>
 
     <!-- Map viewer -->
@@ -70,6 +71,9 @@
       </div>
     </main>
   </div>
+
+  <!-- Screen reader status announcements -->
+  <div id="sr-status" aria-live="polite" aria-atomic="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);"></div>
 
   <script src="js/map-config.js"></script>
   <script src="js/map-engine.js"></script>

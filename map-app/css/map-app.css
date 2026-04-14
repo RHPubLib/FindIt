@@ -71,8 +71,13 @@ html, body {
   font-family: inherit;
 }
 
+.map-search-input:focus-visible {
+  outline: 2px solid #004d5c;
+  outline-offset: -2px;
+}
+
 .map-search-input::placeholder {
-  color: #999;
+  color: #666;
 }
 
 .map-search-btn {
@@ -101,7 +106,7 @@ html, body {
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #999;
+  color: #666;
   cursor: pointer;
   padding: 4px 8px;
 }
@@ -599,8 +604,8 @@ html, body {
   font-size: 12px;
   font-weight: 600;
 }
-.info-avail.available { color: #2e7d32; }
-.info-avail.checked-out { color: #c62828; }
+.info-avail.available { color: #1b5e20; }
+.info-avail.checked-out { color: #b71c1c; }
 .info-catalog-link {
   display: inline-block;
   margin-top: 6px;
@@ -706,7 +711,7 @@ body.kiosk-mode .map-result-show-btn {
 }
 .result-meta {
   font-size: 11px;
-  color: #999;
+  color: #666;
 }
 .result-location {
   font-size: 12px;
