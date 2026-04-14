@@ -238,7 +238,8 @@
 
     var html = '<div class="info-card">';
     if (coverUrl) {
-      html += '<img class="info-cover" src="' + coverUrl + '" alt="" onerror="this.style.display=\'none\'">';
+      var coverAlt = "Cover of " + (item.title || "item").replace(/"/g, "&quot;");
+      html += '<img class="info-cover" src="' + coverUrl + '" alt="' + coverAlt + '" onerror="this.style.display=\'none\'">';
     }
     html += '<div class="info-details">';
     html += '<div class="info-item-title">' + (item.title || "") + '</div>';

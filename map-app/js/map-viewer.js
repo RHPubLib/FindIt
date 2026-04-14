@@ -20,6 +20,8 @@ var MapViewer = {
 
 MapViewer.init = function () {
   this._viewport = document.getElementById("map-viewport");
+  this._viewport.setAttribute("role", "tabpanel");
+  this._viewport.setAttribute("aria-label", "Floor map");
   this._container = document.getElementById("map-container");
   this._tabBar = document.getElementById("floor-tabs");
 
@@ -33,6 +35,8 @@ MapViewer.init = function () {
 MapViewer._buildTabs = function () {
   var self = this;
   this._tabBar.innerHTML = "";
+  this._tabBar.setAttribute("role", "tablist");
+  this._tabBar.setAttribute("aria-label", "Floor selection");
 
   MapConfig.floors.forEach(function (floor) {
     var tab = document.createElement("button");
@@ -40,6 +44,8 @@ MapViewer._buildTabs = function () {
     tab.textContent = floor.label;
     tab.setAttribute("role", "tab");
     tab.setAttribute("data-floor", floor.id);
+    tab.setAttribute("aria-controls", "map-viewport");
+    tab.id = "tab-" + floor.id;
 
     tab.addEventListener("click", function () {
       self.showFloor(floor.id);
@@ -65,6 +71,8 @@ MapViewer.showFloor = function (floorId, highlight) {
     var isActive = tabs[t].getAttribute("data-floor") === floorId;
     tabs[t].className = "map-tab" + (isActive ? " map-tab-active" : "");
     tabs[t].setAttribute("aria-selected", isActive ? "true" : "false");
+    tabs[t].setAttribute("tabindex", isActive ? "0" : "-1");
+    if (isActive) this._viewport.setAttribute("aria-labelledby", tabs[t].id);
   }
 
   // Render map content

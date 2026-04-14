@@ -160,6 +160,8 @@ MapEngine.renderLandmarks = function (container, floorMapUrl) {
 
     var pin = document.createElement("div");
     pin.className = "map-landmark-icon";
+    pin.setAttribute("role", "img");
+    pin.setAttribute("aria-label", (lm.label || ICONS[lm.type] || "Landmark") + " location");
     pin.style.cssText = "position:absolute;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);z-index:1;";
     if (MapEngine.landmarksHidden) pin.style.display = "none";
     pin.style.left = lm.x + "%";

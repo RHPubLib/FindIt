@@ -125,6 +125,8 @@
       if (lm.map && lm.map !== mapUrl) continue;
       var lmPin = document.createElement("div");
       lmPin.className = "findit-landmark";
+      lmPin.setAttribute("role", "img");
+      lmPin.setAttribute("aria-label", (lm.label || lm.type || "Landmark") + " location");
       lmPin.style.cssText = "position:absolute;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);z-index:1;";
       lmPin.style.left = lm.x + "%";
       lmPin.style.top = lm.y + "%";
@@ -219,7 +221,7 @@
     header.appendChild(headerLeft);
     // Hide title text on mobile — info panel shows it instead
     var mobileStyle = document.createElement("style");
-    mobileStyle.textContent = "@media(max-width:600px){#findit-modal h2{display:none !important;}#findit-modal img[alt='RHPL']{height:30px !important;}}@media(min-width:601px){#findit-dialog{height:88vh !important;}}";
+    mobileStyle.textContent = "@media(max-width:600px){#findit-modal h2{display:none !important;}#findit-modal img[alt='RHPL']{height:30px !important;}}@media(min-width:601px){#findit-dialog{height:88vh !important;}}@media(prefers-reduced-motion:reduce){#findit-modal *{animation:none !important;transition:none !important;}#findit-modal animate{display:none;}}#findit-modal button:focus-visible{outline:2px solid #004d5c !important;outline-offset:2px;}#findit-modal .findit-btn:focus-visible{outline:2px solid #fff !important;outline-offset:2px;}";
     header.appendChild(mobileStyle);
     var closeBtn = document.createElement("button");
     closeBtn.style.cssText = "font-size:1.8rem;line-height:1;background:none;border:none;cursor:pointer;color:#fff;padding:4px 8px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
