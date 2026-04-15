@@ -280,7 +280,7 @@ The editor runs on the RHPL Debian dev server as a Flask app behind Nginx:
 When a user clicks "Publish to FindIt" in the editor:
 
 1. All saved projects are combined into a single `ranges.json`
-2. The file is pushed to GoDaddy via SCP (`libraries/rhpl/ranges.json`)
+2. The file is pushed to your production server via SCP
 3. The updated `findit-rhpl.js` engine is also pushed
 4. File permissions are set to 644 so Apache can serve them
 5. FindIt picks up the changes immediately (cache-busted with `?t=timestamp`)
@@ -310,7 +310,6 @@ Each rectangle exports as a FindIt range entry with an `area` property:
 
 ```
 editor/
-├── server.py              # Original standalone server (dev/reference)
 ├── public/
 │   ├── index.html         # Editor UI
 │   ├── editor.css         # Styles (teal #00697f branding)
@@ -325,20 +324,29 @@ editor/
 
 ```
 FindIt/
-├── src/                       # Standalone engine
-├── libraries/                 # Library-specific configs (RHPL example included)
-├── editor/                    # Visual rectangle editor (Flask + Canvas)
+├── src/
+│   └── findit.js              # Standalone engine (reference)
+├── libraries/
+│   └── rhpl/
+│       ├── findit-rhpl.js     # RHPL production widget (dynamic config + full engine)
+│       ├── mobile-map-app.png
+│       └── mobile-vega-shelf-location.png
+├── editor/
+│   ├── app.py                 # Flask backend (OAuth, PAPI, publish)
+│   └── public/                # Editor frontend (HTML/CSS/JS + Canvas)
 ├── map-app/                   # Public interactive map (vanilla JS)
 ├── deploy/                    # Docker deployment files
 │   ├── nginx.conf
 │   └── docker-entrypoint.sh
-├── data/                      # Example ranges.json
+├── data/
+│   └── ranges.example.json    # Example shelf locations + landmarks
 ├── docs/
 │   ├── deployment/
-│   │   ├── docker.md          # Docker quickstart guide
-│   │   └── static-hosting.md  # GitHub Pages / Cloudflare / Netlify guide
-│   ├── technical-report.md    # Full technical architecture report
-│   └── editor-server.md       # Editor server setup reference
+│   │   ├── docker.md          # Docker quickstart
+│   │   └── static-hosting.md  # GitHub Pages / Cloudflare / Netlify
+│   ├── technical-report.md    # Full architecture report
+│   ├── editor-server.md       # Editor server setup (RHPL reference)
+│   └── floor-map-guide.md     # Floor plan image preparation
 ├── Dockerfile                 # Container build
 ├── docker-compose.yml         # One-command deployment
 ├── .htaccess.example          # CORS headers for Apache
