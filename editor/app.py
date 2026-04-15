@@ -77,9 +77,10 @@ def callback():
     userinfo = token.get("userinfo", {})
     email = userinfo.get("email", "")
 
-    if not email.lower().endswith("@rhpl.org"):
+    allowed_domain = os.environ.get("ALLOWED_EMAIL_DOMAIN", "rhpl.org")
+    if not email.lower().endswith("@" + allowed_domain):
         return render_template("login.html",
-                               error="Only @rhpl.org Google Workspace accounts are permitted.")
+                               error=f"Only @{allowed_domain} accounts are permitted.")
 
     session.permanent = True
     session["user"] = {
@@ -529,17 +530,11 @@ def export_findit():
 
 # ── Publish to GoDaddy ────────────────────────────────────────────────
 
-GODADDY_HOST = os.environ.get("GODADDY_HOST", "132.148.43.54")
-GODADDY_USER = os.environ.get("GODADDY_USER", "rhpladmin")
-GODADDY_KEY = os.environ.get("GODADDY_SSH_KEY", "/home/localadm/.ssh/godaddy_findit")
-GODADDY_RANGES_PATH = os.environ.get(
-    "GODADDY_RANGES_PATH",
-    "/home/rhpladmin/public_html/FindIt/libraries/rhpl/ranges.json"
-)
-GODADDY_JS_PATH = os.environ.get(
-    "GODADDY_JS_PATH",
-    "/home/rhpladmin/public_html/FindIt/libraries/rhpl/findit-rhpl.js"
-)
+PUBLISH_HOST = os.environ.get("PUBLISH_HOST", "")
+PUBLISH_USER = os.environ.get("PUBLISH_USER", "")
+PUBLISH_KEY = os.environ.get("PUBLISH_SSH_KEY", "")
+PUBLISH_RANGES_PATH = os.environ.get("PUBLISH_RANGES_PATH", "")
+PUBLISH_JS_PATH = os.environ.get("PUBLISH_JS_PATH", "")
 LOCAL_ENGINE_JS = Path(os.environ.get(
     "EDITOR_STATIC_DIR",
     str(Path.home() / "FindIT" / "editor" / "public")
@@ -549,9 +544,12 @@ LOCAL_ENGINE_JS = Path(os.environ.get(
 @app.route("/api/publish", methods=["POST"])
 @login_required
 def publish():
-    """Build ranges.json from all saved projects and push to GoDaddy."""
+    """Build ranges.json from all saved projects and push to production server via SCP."""
     import subprocess
     import tempfile
+
+    if not PUBLISH_HOST or not PUBLISH_USER or not PUBLISH_KEY:
+        return jsonify({"error": "Publishing not configured. Set PUBLISH_HOST, PUBLISH_USER, and PUBLISH_SSH_KEY environment variables."}), 400
 
     try:
         # Collect ranges from ALL saved projects
@@ -637,11 +635,11 @@ def publish():
             tmp_path = tmp.name
 
         scp_cmd = [
-            "scp", "-i", GODADDY_KEY,
+            "scp", "-i", PUBLISH_KEY,
             "-o", "StrictHostKeyChecking=accept-new",
             "-o", "ConnectTimeout=10",
             tmp_path,
-            f"{GODADDY_USER}@{GODADDY_HOST}:{GODADDY_RANGES_PATH}",
+            f"{PUBLISH_USER}@{PUBLISH_HOST}:{PUBLISH_RANGES_PATH}",
         ]
         result = subprocess.run(scp_cmd, capture_output=True, text=True, timeout=30)
         os.unlink(tmp_path)
@@ -652,21 +650,21 @@ def publish():
 
         # Fix permissions so the web server can read the file
         subprocess.run([
-            "ssh", "-i", GODADDY_KEY,
+            "ssh", "-i", PUBLISH_KEY,
             "-o", "StrictHostKeyChecking=accept-new",
             "-o", "ConnectTimeout=10",
-            f"{GODADDY_USER}@{GODADDY_HOST}",
-            f"chmod 644 {GODADDY_RANGES_PATH} {GODADDY_JS_PATH}",
+            f"{PUBLISH_USER}@{PUBLISH_HOST}",
+            f"chmod 644 {PUBLISH_RANGES_PATH} {PUBLISH_JS_PATH}",
         ], capture_output=True, text=True, timeout=15)
 
         # Also push the updated findit-rhpl.js engine
         if LOCAL_ENGINE_JS.exists():
             scp_js = [
-                "scp", "-i", GODADDY_KEY,
+                "scp", "-i", PUBLISH_KEY,
                 "-o", "StrictHostKeyChecking=accept-new",
                 "-o", "ConnectTimeout=10",
                 str(LOCAL_ENGINE_JS),
-                f"{GODADDY_USER}@{GODADDY_HOST}:{GODADDY_JS_PATH}",
+                f"{PUBLISH_USER}@{PUBLISH_HOST}:{PUBLISH_JS_PATH}",
             ]
             js_result = subprocess.run(scp_js, capture_output=True, text=True, timeout=30)
             if js_result.returncode != 0:

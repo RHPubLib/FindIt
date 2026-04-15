@@ -42,9 +42,9 @@ SECRET_KEY=<random hex>
 EDITOR_STATIC_DIR=/home/localadm/FindIT/editor/public
 
 # Polaris PAPI
-PAPI_BASE_URL=https://catalog.rhpl.org/PAPIService
-PAPI_ACCESS_ID=localpull
-PAPI_ACCESS_KEY=<key>
+PAPI_BASE_URL=https://your-polaris-server/PAPIService
+PAPI_ACCESS_ID=your_access_id
+PAPI_ACCESS_KEY=your_secret_key
 PAPI_LANG_ID=1033
 PAPI_APP_ID=100
 PAPI_ORG_ID=3

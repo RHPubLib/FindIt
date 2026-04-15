@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-FindIt Rectangle Editor — Backend Server
-Serves the editor UI and provides API endpoints for:
-  - Uploading floor plan images
-  - Saving/loading rectangle project data
-  - Listing available projects and images
+DEPRECATED — This is the original standalone dev server (no auth, no OAuth, no PAPI).
+Use editor/app.py instead, which includes Google OAuth, Polaris PAPI integration,
+and the publish-to-production flow.
+
+This file is kept as a reference for the minimal API structure.
 """
 
 import http.server
