@@ -265,24 +265,24 @@ editor/
 ## Architecture
 
 ```
-FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
-├── src/
-│   ├── findit.js              # Standalone engine (for separate config loading)
-│   └── findit.css             # Modal, button, and marker styles
-├── libraries/
-│   ├── template/
-│   │   └── config.js          # Template for new libraries
-│   └── rhpl/
-│       ├── config.js          # RHPL example config (reference only)
-│       ├── findit-rhpl.js     # RHPL bundled file (dynamic config loader + engine)
-│       └── ranges.json        # Published by editor.rhpl.org (on GoDaddy only)
-├── editor/
-│   ├── server.py              # Standalone dev server (reference)
-│   └── public/                # Editor frontend (index.html, editor.js, editor.css)
-├── maps/
-│   └── README.md              # Maps go on YOUR server, not here
-├── docs/                      # Setup and configuration guides
-├── .htaccess.example          # Copy to your server as .htaccess
+FindIt/
+├── src/                       # Standalone engine
+├── libraries/                 # Library-specific configs (RHPL example included)
+├── editor/                    # Visual rectangle editor (Flask + Canvas)
+├── map-app/                   # Public interactive map (vanilla JS)
+├── deploy/                    # Docker deployment files
+│   ├── nginx.conf
+│   └── docker-entrypoint.sh
+├── data/                      # Example ranges.json
+├── docs/
+│   ├── deployment/
+│   │   ├── docker.md          # Docker quickstart guide
+│   │   └── static-hosting.md  # GitHub Pages / Cloudflare / Netlify guide
+│   ├── technical-report.md    # Full technical architecture report
+│   └── editor-server.md       # Editor server setup reference
+├── Dockerfile                 # Container build
+├── docker-compose.yml         # One-command deployment
+├── .htaccess.example          # CORS headers for Apache
 └── README.md
 ```
 
@@ -294,9 +294,30 @@ FindIt/                        <-- PROJECT TEMPLATE (do not serve from GitHub)
 
 ---
 
-## Deployment
+## Deployment Options
 
-### Recommended: SFTP to your hosting provider
+### Option 1: Docker (recommended for Polaris + Vega libraries)
+
+The fastest path to a working deployment. Includes the map app, widget, and search API proxy.
+
+```bash
+git clone https://github.com/RHPubLib/FindIt.git
+cd FindIt
+# Edit docker-compose.yml with your Polaris PAPI credentials
+# Add floor plan images to maps/
+# Add ranges.json to data/
+docker-compose up -d
+```
+
+See [Docker Deployment Guide](docs/deployment/docker.md) for full instructions.
+
+### Option 2: Static Hosting (GitHub Pages, Cloudflare, Netlify)
+
+Free hosting for the map app and widget — no server required. Works for libraries that want the interactive map and Vega integration without the visual editor or search API.
+
+See [Static Hosting Guide](docs/deployment/static-hosting.md) for setup instructions.
+
+### Option 3: SFTP to your hosting provider
 
 1. Set up a subdomain (e.g., `findit.yourlibrary.org`) on your hosting
 2. Upload files via SFTP to the subdomain's document root

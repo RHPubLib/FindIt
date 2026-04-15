@@ -1,0 +1,64 @@
+# FindIt — Docker Compose for Polaris + Vega Libraries
+#
+# Quick start:
+#   1. Copy this file and fill in your library's values
+#   2. Add floor plan images to ./maps/
+#   3. Add your ranges.json to ./data/
+#   4. Run: docker-compose up -d
+#   5. Visit: http://localhost:8080/map
+#   6. Inject widget.js into your Vega Custom Header Code
+
+version: "3.8"
+
+services:
+  findit:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      # ── Library Info ──
+      FINDIT_LIBRARY_NAME: "My Public Library"
+      FINDIT_BRAND_COLOR: "#00697f"
+      FINDIT_LOGO_URL: "/maps/logo.png"
+
+      # ── Polaris PAPI (required for search) ──
+      FINDIT_PAPI_BASE_URL: "https://your-polaris-server/PAPIService"
+      FINDIT_PAPI_ACCESS_ID: "your_access_id"
+      FINDIT_PAPI_ACCESS_KEY: "your_secret_key"
+      FINDIT_PAPI_LANG_ID: "1033"
+      FINDIT_PAPI_APP_ID: "100"
+      FINDIT_PAPI_ORG_ID: "1"
+
+      # ── Vega Discover ──
+      FINDIT_VEGA_BASE_URL: "https://yourlibrary.na3.iiivega.com"
+      FINDIT_VEGA_DEEP_LINK: "https://yourlibrary.na3.iiivega.com/search?query={title}&searchType=everything"
+
+      # ── Syndetics (included with Clarivate subscription) ──
+      FINDIT_SYNDETICS_URL: "https://syndetics.com/index.aspx"
+
+      # ── Floor Plans ──
+      FINDIT_DEFAULT_MAP: "/maps/floor1.jpg"
+      FINDIT_FLOOR1_ID: "1f"
+      FINDIT_FLOOR1_LABEL: "1st Floor"
+      FINDIT_FLOOR1_MAP: "/maps/floor1.jpg"
+      FINDIT_FLOOR2_ID: "2f"
+      FINDIT_FLOOR2_LABEL: "2nd Floor"
+      FINDIT_FLOOR2_MAP: "/maps/floor2.jpg"
+
+      # ── Data ──
+      FINDIT_RANGES_URL: "/data/ranges.json"
+
+      # ── OAuth (for editor, optional) ──
+      # FINDIT_AUTH_PROVIDER: "google"
+      # FINDIT_OIDC_ISSUER: "https://accounts.google.com"
+      # FINDIT_OAUTH_CLIENT_ID: ""
+      # FINDIT_OAUTH_CLIENT_SECRET: ""
+      # FINDIT_OAUTH_REDIRECT_URI: "https://findit.yourlibrary.org/callback"
+      # FINDIT_ALLOWED_DOMAIN: "yourlibrary.org"
+
+    volumes:
+      # Mount your floor plan images
+      - ./maps:/usr/share/nginx/html/maps:ro
+      # Mount your ranges.json (so you can update without rebuilding)
+      - ./data:/usr/share/nginx/html/data:ro
+    restart: unless-stopped
