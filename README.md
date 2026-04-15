@@ -67,63 +67,107 @@ FindIt is designed so that each library hosts its own copy of the script and map
 
 ---
 
-## Quick Start
+## Get Started
 
-### 1. Clone this repository
+### What You Need
+
+- **Polaris ILS** with PAPI (REST API) access — ask your Polaris admin for an AccessID and Secret Key
+- **Vega Discover** catalog with Custom Header Code access
+- **Floor plan images** of your building (JPEG or PNG, any resolution)
+- **A place to host files** — Docker, any web server, or free static hosting
+
+### Step 1: Get your floor plan images
+
+You need architectural floor plans or clear photographs of each floor. Tips:
+- JPEG for photographs/scans, PNG for digital drawings
+- 1200-3000px wide recommended (zoom controls handle the rest)
+- Clean unmarked images work best — FindIt adds the highlights dynamically
+
+### Step 2: Choose your deployment path
+
+#### Path A: Docker (full experience, 10 minutes)
+
+Best for libraries that want the visual editor, catalog search, and Vega widget.
 
 ```bash
 git clone https://github.com/RHPubLib/FindIt.git
+cd FindIt
 ```
 
-### 2. Create your library's config
+1. Add your floor plan images to `maps/`
+2. Edit `docker-compose.yml` — fill in your Polaris PAPI credentials, Vega URL, and library name
+3. Copy `data/ranges.example.json` to `data/ranges.json` and edit it with your shelf locations (or use the visual editor once it's running)
+4. Start it: `docker-compose up -d`
+5. Visit `http://localhost:8080/map` to see your map
 
-Copy the template and customize for your library:
+See the full [Docker Deployment Guide](docs/deployment/docker.md) for details and all configuration options.
 
-```
-libraries/your-library/
-└── findit-yourlibrary.js   (config + engine bundled together)
-```
+#### Path B: Static Hosting (map + widget only, free, 5 minutes)
 
-The bundled file includes both your library's configuration (collection names, map URLs) and the FindIt engine in a single file. See `libraries/rhpl/findit-rhpl.js` for a working example.
+Best for libraries that want the interactive map and Vega integration without running a server. Works with GitHub Pages, Cloudflare Pages, or Netlify.
 
-### 3. Prepare floor plan images
+1. Fork this repository on GitHub
+2. Edit `map-app/js/map-config.js` with your floor plan URLs
+3. Create `data/ranges.json` with your shelf locations (see `data/ranges.example.json` for the format)
+4. Enable GitHub Pages in your repo settings
+5. Your map is live at `https://yourusername.github.io/FindIt/map-app/`
 
-Create floor plan images with highlighted areas showing where items are shelved:
+See the full [Static Hosting Guide](docs/deployment/static-hosting.md) for details.
 
-- Use any image editor to highlight shelf locations with a colored overlay
-- Save as JPEG for photographs/scans, PNG for digital drawings
-- Full resolution is fine — the modal includes zoom controls
+#### Path C: Any Web Server (SFTP, Apache, Nginx, IIS)
 
-See [docs/floor-map-guide.md](docs/floor-map-guide.md) for detailed guidance.
-
-### 4. Upload to your web server
-
-Upload your bundled JS file, CSS, and map images to any web server your Vega instance can reach. For example, using SFTP to a GoDaddy cPanel host with a `findit.` subdomain:
+Upload these files to any web server:
 
 ```
 your-server.com/
-├── findit-yourlibrary.js
-├── findit.css
-├── .htaccess              (copy from .htaccess.example)
-└── maps/
-    └── floor1-marked.jpg
+├── map/                    ← contents of map-app/ directory
+├── data/
+│   └── ranges.json         ← your shelf locations
+├── maps/
+│   ├── floor1.jpg
+│   └── floor2.jpg
+├── widget.js               ← copy of libraries/rhpl/findit-rhpl.js
+└── .htaccess               ← copy from .htaccess.example (Apache only)
 ```
 
-### 5. Add one line to Vega Custom Header Code
+### Step 3: Define your shelf locations
 
-Add a single `<script>` tag as the **very first line** of your Custom Header Code. That's it — one line enables FindIt on that catalog:
+Create a `ranges.json` file that maps collections to locations on your floor plan. Each entry needs:
+
+```json
+{
+  "collection": "Adult Fiction",
+  "label": "Adult Fiction - 1st Floor",
+  "directions": "Located on the 1st floor in the main reading area.",
+  "map": "/maps/floor1.jpg",
+  "x": 60.0,
+  "y": 40.0,
+  "area": { "x": 50, "y": 35, "width": 20, "height": 10, "color": "#00697f" }
+}
+```
+
+Coordinates are percentages (0-100) of the image. To find them:
+1. Open your floor plan in any image editor
+2. Note the pixel position of the shelf area
+3. Convert: `percentage = (pixel / image_dimension) * 100`
+
+Or use the **visual editor** (Docker path) — draw rectangles directly on the floor plan with your mouse.
+
+See `data/ranges.example.json` for a complete example with landmarks.
+
+### Step 4: Add FindIt to your Vega catalog
+
+Add this as the **very first line** of your Vega Discover Custom Header Code:
 
 ```html
-<script src="https://your-server.com/libraries/your-library/findit-yourlibrary.js"></script>
+<script src="https://findit.yourlibrary.org/widget.js"></script>
 ```
 
-**Important:** Vega strips `<script>` tags that appear after HTML content, so the script tag must come before any `<style>` or `<div>` elements in the header.
+Replace the URL with wherever you're hosting the widget file.
 
-The bundled JS file includes inline styles, so no separate CSS file is required. If you prefer using the external stylesheet for the standalone (non-bundled) setup, add this anywhere in the header:
+**Important:** The `<script>` tag must be the first line — Vega strips script tags that appear after HTML content.
 
-```html
-<link rel="stylesheet" href="https://your-server.com/src/findit.css">
-```
+That's it. Patrons will see a **"View Shelf Location"** button on every item that matches a collection in your `ranges.json`.
 
 ---
 
