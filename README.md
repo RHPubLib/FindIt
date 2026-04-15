@@ -254,7 +254,7 @@ A visual editor for drawing shelf locations on floor plan images. Staff draw, la
 
 ### Dynamic Config Loading
 
-As of Phase 3–4, `findit-rhpl.js` no longer contains hardcoded ranges. Instead:
+The widget no longer contains hardcoded ranges. Instead:
 
 1. The engine fetches `ranges.json` at runtime from the same directory
 2. `ranges.json` is published from the rectangle editor at `editor.rhpl.org`
