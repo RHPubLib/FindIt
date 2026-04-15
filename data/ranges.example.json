@@ -1,0 +1,58 @@
+{
+  "ranges": [
+    {
+      "collection": "Adult Fiction",
+      "label": "Adult Fiction - 1st Floor East Wing",
+      "directions": "The highlighted area on the map shows where your item is located. This item is part of the Adult Fiction collection. It is located on the 1st floor, in the east wing near the main entrance.",
+      "map": "/maps/floor1.jpg",
+      "x": 60.0,
+      "y": 40.0,
+      "area": {
+        "x": 50.0,
+        "y": 35.0,
+        "width": 20.0,
+        "height": 10.0,
+        "color": "#00697f"
+      }
+    },
+    {
+      "collection": "Children's",
+      "label": "Children's Collection - 1st Floor West Wing",
+      "directions": "The highlighted area on the map shows where your item is located. This item is part of the Children's collection. It is located on the 1st floor, in the west wing near the play area.",
+      "map": "/maps/floor1.jpg",
+      "x": 25.0,
+      "y": 55.0,
+      "area": {
+        "x": 15.0,
+        "y": 45.0,
+        "width": 20.0,
+        "height": 20.0,
+        "color": "#00697f"
+      }
+    }
+  ],
+  "landmarks": [
+    {
+      "x": 50.0,
+      "y": 85.0,
+      "type": "restrooms",
+      "label": "Restrooms",
+      "map": "/maps/floor1.jpg"
+    },
+    {
+      "x": 80.0,
+      "y": 50.0,
+      "type": "elevator",
+      "label": "Elevator",
+      "map": "/maps/floor1.jpg"
+    },
+    {
+      "x": 45.0,
+      "y": 60.0,
+      "type": "info",
+      "label": "Reference Desk",
+      "map": "/maps/floor1.jpg"
+    }
+  ],
+  "defaultMap": "/maps/floor1.jpg"
+}
