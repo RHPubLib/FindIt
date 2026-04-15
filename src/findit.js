@@ -1,9 +1,11 @@
 /**
- * FindIt – Show patrons where a book lives on the shelf.
- * Injects a "Find It" button into Vega Discover availability rows.
- * https://github.com/RHPubLib/FindIt
+ * FindIt – Standalone Engine (Reference)
  *
- * No dependencies. No build step. Pure vanilla JS.
+ * This is the base matching + modal engine without dynamic config loading.
+ * For production use, see libraries/rhpl/findit-rhpl.js which adds dynamic
+ * ranges.json loading, landmarks, cover images, and accessibility features.
+ *
+ * https://github.com/RHPubLib/FindIt
  */
 
 (function () {
