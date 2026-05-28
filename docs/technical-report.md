@@ -75,7 +75,7 @@ Web-based tool for IT staff to visually define shelf locations on floor plan ima
 
 ### Authentication Flow
 1. User visits `editor.rhpl.org` → redirected to `/login`
-2. Flask redirects to Google OAuth consent screen ("your OAuth client")
+2. Flask redirects to Google OAuth consent screen (your OAuth client's display name)
 3. Google authenticates user, returns authorization code
 4. Flask exchanges code for tokens via Authlib
 5. Email domain checked: must end with `@rhpl.org`
@@ -94,7 +94,7 @@ Web-based tool for IT staff to visually define shelf locations on floor plan ima
 | `/etc/nginx/sites-available/editor` | Nginx reverse proxy config |
 | `/var/log/findit-editor/` | Gunicorn logs |
 | `/home/youruser/FindIT/editor/public/` | Frontend source files |
-| `/home/youruser/.ssh/your_publish_key` | SSH key for GoDaddy deployment |
+| `/home/youruser/.ssh/your_publish_key` | SSH key for static publish target |
 
 ---
 
@@ -219,13 +219,13 @@ All overlay elements use HTML positioning (CSS percentage left/top + transform) 
 - Landmark icons have `role="img"` and `aria-label`
 - Keyboard: Escape closes, arrow keys pan
 
-### File Locations (GoDaddy)
+### File Locations (static publish target)
 | Path | Purpose |
 |------|---------|
-| `/home/youruser/public_html/FindIt/libraries/rhpl/findit-rhpl.js` | Widget code |
-| `/home/youruser/public_html/FindIt/libraries/rhpl/ranges.json` | Config data |
+| `/home/youruser/public_html/FindIt/libraries/yourlibrary/findit-yourlibrary.js` | Widget code |
+| `/home/youruser/public_html/FindIt/libraries/yourlibrary/ranges.json` | Config data |
 | `/home/youruser/public_html/FindIt/maps/` | Floor plan images |
-| `/home/youruser/public_html/FindIt/maps/rhpl-logo-white.png` | RHPL logo |
+| `/home/youruser/public_html/FindIt/maps/yourlibrary-logo-white.png` | RHPL logo |
 
 ---
 
@@ -322,14 +322,14 @@ https://rhpl.na3.iiivega.com/search?query={title}&searchType=everything
 
 ### 5. Google Workspace OAuth 2.0
 
-Shared OAuth client "your OAuth client" across all RHPL web apps:
+A Google Workspace OAuth client, scoped to your library's domain:
 
 | Parameter | Value |
 |-----------|-------|
-| Client ID | `your-client-id-...apps.googleusercontent.com` |
+| Client ID | `your-client-id.apps.googleusercontent.com` |
 | Provider | Google OpenID Connect |
 | Scopes | `openid email profile` |
-| Domain restriction | `@rhpl.org` email suffix |
+| Domain restriction | `@yourlibrary.org` email suffix |
 | Session | Signed cookies, 2-hour expiry |
 | Redirect URI | `https://editor.rhpl.org/callback` |
 
@@ -485,9 +485,9 @@ Publish to FindIt (button click)
      ↓
 Flask collects all projects → builds ranges.json
      ↓
-SCP to GoDaddy:
-  - ranges.json → /home/youruser/public_html/FindIt/libraries/rhpl/ranges.json
-  - findit-rhpl.js → /home/youruser/public_html/FindIt/libraries/rhpl/findit-rhpl.js
+SCP to static publish target:
+  - ranges.json → /home/youruser/public_html/FindIt/libraries/yourlibrary/ranges.json
+  - findit-rhpl.js → /home/youruser/public_html/FindIt/libraries/yourlibrary/findit-yourlibrary.js
      ↓
 chmod 644 via SSH
      ↓
