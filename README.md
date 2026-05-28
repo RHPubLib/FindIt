@@ -439,3 +439,16 @@ To report a bug or request a feature: [open an issue](https://github.com/RHPubLi
 ## License
 
 MIT — free to use, modify, and share.
+
+## Security guidance for contributors (AI tools)
+
+This is a public repository. If you use AI coding tools (Claude Code, Antigravity, Cursor, Copilot, ChatGPT, Gemini, etc.) to work on this code, treat the AI's context window as **non-confidential**. Anything you paste into a prompt may be logged, used for model training, or visible to the service provider's staff.
+
+**Do not paste secrets, private patron data, or full internal network diagrams into AI prompts; treat the AI context as non-confidential.** Specifically avoid:
+
+- Library patron data (names, card numbers, contact info, borrowing history)
+- API keys, OAuth client secrets, service-account JSON, Polaris `PAPI_ACCESS_KEY`, or any value from your `.env` or Secret Manager
+- Full internal network diagrams or your library's IP allocation tables
+- SSH private keys for your editor server or publish host
+
+When debugging requires real data, prefer a local LLM (your hardware, no upload), a development environment with synthesized fixtures, or manual inspection without AI assistance. AGENTS.md in this repo instructs AI agents to decline if asked to consume the above and to remind you of this rule.
