@@ -376,33 +376,30 @@ results.sort(function(a, b) {
 
 ## Infrastructure Layer
 
-### Debian Server (your-server)
+### Editor server (Linux, runs the Flask app)
 | Property | Value |
 |----------|-------|
-| Internal IP | REDACTED-INTERNAL-IP |
-| External IP | REDACTED-EXTERNAL-IP |
-| OS | Debian 13 (Trixie) |
+| OS | Debian 13 (Trixie) at RHPL — any modern Linux works |
 | Python | 3.13 |
-| Nginx | With `*.rhpl.org` wildcard SSL cert |
+| Web server | Nginx reverse proxy with SSL (wildcard cert recommended) |
+| Runs the editor at | your `editor.<library>.org` |
 
-### GoDaddy cPanel
+### Static publish target (shared web host, e.g. cPanel)
 | Property | Value |
 |----------|-------|
-| IP | REDACTED-HOST-IP |
-| User | youruser |
-| SSH Key | ed25519 (`findit-editor`) |
-| Document Root | `/home/youruser/public_html/FindIt/` |
-| URL Mapping | `findit.rhpl.org` → document root (no `/FindIt/` prefix) |
+| User | a dedicated SSH user (e.g. `findit-publisher`) |
+| SSH Key | ed25519, restricted to scp on the target path |
+| Document Root | `/home/<user>/public_html/FindIt/` |
+| URL Mapping | your `findit.<library>.org` → document root (no `/FindIt/` prefix) |
 
-### DNS (GoDaddy A Records → REDACTED-EXTERNAL-IP)
-- `editor.rhpl.org`
-- `map.rhpl.org`
+### DNS
+A records for `editor.<library>.org` and `map.<library>.org` point at the editor server's public IP. `findit.<library>.org` points at the static publish host.
 
 ### GitHub
 | Property | Value |
 |----------|-------|
-| Repository | `github.com/RHPubLib/FindIt` |
-| SSH Key | ed25519 (`findit-debian`) |
+| Reference repository | `github.com/RHPubLib/FindIt` (this repo) |
+| SSH Key | ed25519, deploy key on your fork |
 | License | MIT |
 
 ### systemd Services

@@ -1,6 +1,6 @@
 # Rectangle Editor — Server Setup Reference
 
-This documents the full server-side stack for the FindIt Rectangle Editor running at `editor.rhpl.org` on the RHPL Debian dev server (`your-server`, REDACTED-INTERNAL-IP, external REDACTED-EXTERNAL-IP).
+This documents the full server-side stack for the FindIt Rectangle Editor. RHPL runs it at `editor.rhpl.org` on a Debian dev server; substitute your own server, hostname, and IPs throughout the examples below.
 
 ---
 
@@ -29,15 +29,15 @@ This documents the full server-side stack for the FindIt Rectangle Editor runnin
 | Nginx config | `/etc/nginx/sites-available/editor` |
 | Gunicorn logs | `/var/log/findit-editor/` |
 | Login template | `/opt/findit-editor/templates/login.html` |
-| SSH key for GoDaddy | `/home/youruser/.ssh/your_publish_key` |
+| SSH key to publish target | `/home/youruser/.ssh/your_publish_key` |
 
 ---
 
 ## Environment Variables (`/etc/findit-editor/config.env`)
 
 ```
-GOOGLE_CLIENT_ID=your-client-id-...apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=GOCSPX-...
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your-client-secret
 SECRET_KEY=<random hex>
 EDITOR_STATIC_DIR=/home/youruser/FindIT/editor/public
 
@@ -114,19 +114,19 @@ On page load, `editor.js` calls both endpoints and populates two `<select>` drop
 - Material type is per-item, not per-collection — PAPI cannot tell you the material type for a collection
 - Swagger UI: `https://catalog.rhpl.org/PAPIService/swagger/index.html`
 
-### RHPL Branch OrgIDs
+### Example: OrgID layout
 
-| OrgID | Branch |
-|-------|--------|
+OrgIDs are library-specific (defined in your Polaris configuration). RHPL's layout illustrates the typical pattern — a System/District/Main-branch hierarchy plus auxiliary collection points:
+
+| OrgID | Branch (example) |
+|-------|------------------|
 | 1 | System |
 | 2 | District |
 | 3 | Main Library |
-| 4 | Mobile branch |
-| 5 | Drive-up service point |
-| 6 | Outreach Bus |
-| 7 | Mail service |
-| 8-13 | Mini-Branches (Mini-Branch A, Mini-Branch B, OPC, Mini-Branch C, Mini-Branch D, Mini-Branch E) |
-| 15 | Innovative Items Collection |
+| 4-7 | Mobile branch, Drive-up service point, Outreach buses, Mail service |
+| 8+ | Mini-branches and special collections |
+
+Use Polaris's `/REST/public/v1/{lang}/{app}/branches` endpoint to enumerate your own OrgIDs.
 
 ---
 
@@ -136,41 +136,41 @@ When a user clicks "Publish to FindIt":
 
 1. The backend reads ALL saved projects from `/opt/findit-editor/data/*.json`
 2. Combines all rectangles into a single `ranges.json` with FindIt-compatible format
-3. SCPs `ranges.json` to `youruser@REDACTED-HOST-IP:/home/youruser/public_html/FindIt/libraries/rhpl/ranges.json`
-4. Also SCPs the updated `findit-rhpl.js` engine
-5. Runs `chmod 644` on both files via SSH so Apache can serve them
-6. Uses SSH key at `/home/youruser/.ssh/your_publish_key` (ed25519, no passphrase)
+3. SCPs `ranges.json` to your production web host (e.g. `youruser@your-publish-host:/home/youruser/public_html/FindIt/libraries/yourlibrary/ranges.json`)
+4. Also SCPs the updated `findit-yourlibrary.js` engine
+5. Runs `chmod 644` on both files via SSH so the web server can serve them
+6. Uses an ed25519 SSH key dedicated to this publish flow (no passphrase, restricted to scp on the target path)
 
-### GoDaddy File Layout
+### Publish-target file layout
 
 ```
-/home/youruser/public_html/FindIt/    <-- findit.rhpl.org document root
-├── libraries/rhpl/
-│   ├── findit-rhpl.js                 # Engine (fetches ranges.json at runtime)
+/home/youruser/public_html/FindIt/     <-- your-findit-domain document root
+├── libraries/yourlibrary/
+│   ├── findit-yourlibrary.js          # Engine (fetches ranges.json at runtime)
 │   └── ranges.json                    # Published by editor
 ├── maps/
-│   ├── RHPL-First-Floor.jpg
-│   └── RHPL-Second-Floor.jpg
+│   ├── YourLibrary-First-Floor.jpg
+│   └── YourLibrary-Second-Floor.jpg
 └── .htaccess                          # CORS headers
 ```
 
-### URL Mapping
+### URL mapping
 
-`findit.rhpl.org` maps to `/home/youruser/public_html/FindIt/` — so URLs are:
-- `https://findit.rhpl.org/libraries/rhpl/findit-rhpl.js` (NOT `/FindIt/libraries/...`)
-- `https://findit.rhpl.org/maps/RHPL-First-Floor.jpg`
+Your FindIt domain (e.g. RHPL uses `findit.rhpl.org`) maps to `/home/youruser/public_html/FindIt/` — so URLs are:
+- `https://your-findit-domain/libraries/yourlibrary/findit-yourlibrary.js`
+- `https://your-findit-domain/maps/YourLibrary-First-Floor.jpg`
 
 ---
 
 ## Google OAuth
 
-Uses the shared "your OAuth client" OAuth client (same as eduroam.rhpl.org):
+Uses a Google Workspace OAuth 2.0 client (you can share one client across multiple internal apps if convenient):
 
-- Client ID: `your-client-id-...apps.googleusercontent.com`
-- Redirect URI: `https://editor.rhpl.org/callback`
-- Domain restriction: `@rhpl.org` only (checked after token exchange)
+- Client ID: `your-client-id.apps.googleusercontent.com`
+- Redirect URI: `https://your-editor-domain/callback`
+- Domain restriction: `@yourlibrary.org` only (enforced server-side after token exchange)
 - Session: 2-hour expiry, signed cookies
-- Pattern: Flask + Authlib (identical to `/opt/eduroam-portal/app.py`)
+- Pattern: Flask + Authlib (see `editor/app.py` for the reference implementation)
 
 ---
 
