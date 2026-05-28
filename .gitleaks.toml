@@ -42,7 +42,7 @@ tags = ["rhpl", "internal-user"]
 [[rules]]
 id = "rhpl-polaris-orgid-branch-names"
 description = "RHPL-specific Polaris branch names that appear in OrgID enumerations"
-regex = '''\b(Mini-Branch A|Mini-Branch B|Mini-Branch C|Mini-Branch D|Mini-Branch E|Kids'? Bus)\b'''
+regex = '''\b(Avon on the Lake|Avon Tower|Danish Village|Bellbrook|Waltonwood|Kids'? Bus)\b'''
 tags = ["rhpl", "internal-orgid"]
 
 [[rules]]
