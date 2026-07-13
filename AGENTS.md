@@ -16,8 +16,8 @@ You **must not** include the following in any file you create or modify in this 
 |---|---|
 | RHPL internal IPs: `your-internal-range` and any `192.168.x.x` / `172.16-31.x.x` | `your-internal-ip` placeholder |
 | RHPL internal hostnames: `your-server`, `your-radius-server`, `your-sql-server*`, `localai` | `your-server`, `your-editor-server` etc. |
-| RHPL admin usernames: `REDACTED-USER`, `REDACTED-USER` | `youruser` placeholder |
-| Real OAuth client IDs (the `REDACTED-...` style prefix) | `your-client-id.apps.googleusercontent.com` |
+| Admin/service usernames (any real ones) | `youruser` placeholder |
+| Real OAuth client IDs | `your-client-id.apps.googleusercontent.com` |
 | Polaris RHPL OrgID tables (Avon Tower, OPC, Bookmobile, etc., with their IDs) | "Your library's OrgIDs differ — query Polaris to enumerate yours" |
 | Patron PII (names, card numbers, emails) under any circumstance | Test fixtures with obviously fake data only |
 | Service account JSON keys, API keys, `PAPI_ACCESS_KEY` values, `SECRET_KEY` values, SSH private keys | Reference env vars by name only; never assign real values in any committed file |
